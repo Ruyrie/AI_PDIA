@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_recognize 文案（scan_ 前缀）：S01 拍照识别、S02 识别中、R01 识别结果、R02 识别异常 -->
+<resources>
+    <!-- ========== 通用 ========== -->
+    <string name="scan_mode_pest">病虫害</string>
+    <string name="scan_mode_crop">作物 / 杂草</string>
+    <string name="scan_mode_label_pest">病虫害识别</string>
+    <string name="scan_mode_label_crop">作物 / 杂草识别</string>
+    <string name="scan_feature_unavailable">功能暂不可用</string>
+    <string name="scan_history">识别记录</string>
+    <string name="scan_album_folder">病虫害识别助手</string>
+
+    <!-- ========== S01 拍照识别 ========== -->
+    <string name="scan_title">拍照识别</string>
+    <string name="scan_close">关闭</string>
+    <string name="scan_flash_turn_on">打开闪光灯</string>
+    <string name="scan_flash_turn_off">关闭闪光灯</string>
+    <string name="scan_pick_album">从相册选择</string>
+    <string name="scan_take_photo">拍照</string>
+    <string name="scan_mode_desc">识别模式</string>
+    <string name="scan_hint_pest">对准病叶或虫体，保持清晰</string>
+    <string name="scan_hint_crop">拍下整株或叶片，识别作物与杂草</string>
+    <string name="scan_footer">照片将发送到云端大模型识别，结果仅供参考</string>
+    <string name="scan_permission_title">需要相机权限</string>
+    <string name="scan_permission_desc">拍下作物照片才能识别，请允许使用相机；也可以从相册选择照片</string>
+    <string name="scan_permission_desc_permanent">相机权限已关闭，请在系统设置中开启</string>
+    <string name="scan_permission_grant">授予权限</string>
+    <string name="scan_permission_open_settings">去设置开启</string>
+    <string name="scan_camera_error">相机启动失败，请重试或从相册选择照片</string>
+    <string name="scan_capture_failed">拍照失败，请重试</string>
+    <string name="scan_pick_not_image">请选择图片文件</string>
+    <string name="scan_canceled">已取消识别</string>
+
+    <!-- ========== S02 识别中 ========== -->
+    <string name="scan_analyzing_title">正在识别…</string>
+    <string name="scan_analyzing_title_done">识别完成</string>
+    <string name="scan_analyzing_status_compressing">正在压缩照片</string>
+    <string name="scan_analyzing_status_uploading">正在上传照片</string>
+    <string name="scan_analyzing_status_analyzing">AI 正在分析照片</string>
+    <string name="scan_analyzing_status_done">识别完成，已保存到识别记录</string>
+    <string name="scan_step_compress">压缩照片</string>
+    <string name="scan_step_upload">上传到识别服务</string>
+    <string name="scan_step_analyze_pest">AI 分析病斑与虫体特征</string>
+    <string name="scan_step_analyze_crop">AI 分析作物与杂草特征</string>
+    <string name="scan_step_compressing">压缩中</string>
+    <string name="scan_step_running">进行中</string>
+    <string name="scan_step_waiting">等待中</string>
+    <string name="scan_step_done">已完成</string>
+    <string name="scan_analyzing_duration">通常需要 3–8 秒，网络较慢时会更久</string>
+    <string name="scan_analyzing_cancel">取消识别</string>
+    <string name="scan_analyzing_view_result">查看结果</string>
+    <string name="scan_analyzing_confirm_title">要取消本次识别吗？</string>
+    <string name="scan_analyzing_confirm_message">照片正在分析中，取消后本次不会得到识别结果。</string>
+    <string name="scan_analyzing_confirm_continue">继续识别</string>
+    <string name="scan_analyzing_photo_desc">本次识别的照片</string>
+
+    <!-- 识别失败的提示文案 -->
+    <string name="scan_err_image_bad">照片不清晰，无法识别</string>
+    <string name="scan_err_unavailable">识别服务暂不可用</string>
+    <string name="scan_err_timeout">识别超时，请重试</string>
+    <string name="scan_err_server">服务器开小差了，请稍后再试</string>
+    <string name="scan_err_network">网络连接失败，请检查网络后重试</string>
+    <string name="scan_err_image_unreadable">无法读取这张照片，请换一张</string>
+
+    <!-- ========== R01 识别结果 ========== -->
+    <string name="scan_result_title">识别结果</string>
+    <string name="scan_result_most_likely">最可能是</string>
+    <string name="scan_result_confidence">匹配度 %1$d%%</string>
+    <string name="scan_result_evidence">识别依据</string>
+    <string name="scan_result_others">其他可能</string>
+    <string name="scan_result_footer">由 %1$s 识别 · 结果仅供参考，已保存到识别记录</string>
+    <string name="scan_result_retry">重新识别</string>
+    <string name="scan_result_retrying">识别中…</string>
+    <string name="scan_result_ask_ai">追问 AI</string>
+    <string name="scan_result_retry_success">已重新识别，结果已更新</string>
+    <string name="scan_result_not_found">该识别记录不存在或已删除</string>
+    <string name="scan_result_reload">重试</string>
+    <string name="scan_result_back">返回</string>
+    <string name="scan_photo_loading">照片加载中</string>
+    <string name="scan_photo_failed">照片加载失败</string>
+    <string name="scan_tag_spread_fast">传播快</string>
+
+    <!-- ========== R02 识别异常 ========== -->
+    <string name="scan_error_blur_title">照片不够清晰</string>
+    <string name="scan_error_blur_message">画面模糊或病斑太小，AI 无法判断。请靠近病叶、对准焦点后重拍。</string>
+    <string name="scan_error_blur_tips_title">拍摄建议</string>
+    <string name="scan_error_blur_tip_1">靠近到 15–30 厘米，对准病斑后轻点屏幕对焦</string>
+    <string name="scan_error_blur_tip_2">在光线充足处拍摄，避免逆光和强反光</string>
+    <string name="scan_error_blur_tip_3">一张照片只拍一处病斑或一只虫体</string>
+    <string name="scan_error_failed_title">识别失败</string>
+    <string name="scan_error_failed_message_timeout">连接识别服务超时，请检查网络后重试。</string>
+    <string name="scan_error_failed_message_unavailable">识别服务暂不可用，请稍后重试。</string>
+    <string name="scan_error_failed_message_network">网络连接失败，请检查网络后重试。</string>
+    <string name="scan_error_failed_tips_title">可能的原因</string>
+    <string name="scan_error_failed_tip_1">网络不稳定：检查移动数据或 Wi-Fi 后重试</string>
+    <string name="scan_error_failed_tip_2">识别服务繁忙：稍等片刻再试</string>
+    <string name="scan_error_failed_tip_3">照片已保存在识别记录，可随时重新识别</string>
+    <string name="scan_error_action_recognize_again">重新识别</string>
+    <string name="scan_error_action_retake">重拍</string>
+    <string name="scan_error_action_retry">重试</string>
+    <string name="scan_error_still_blur">照片仍不清晰，建议重拍</string>
+    <string name="scan_error_photo_missing">原照片已不存在，请重新拍摄</string>
+</resources>

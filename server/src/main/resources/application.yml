@@ -1,0 +1,114 @@
+# pestai-server 配置：所有连接信息与密钥都来自环境变量（${ENV:默认值}），任何 Key 都不写进本文件。
+# 本机开发可把变量写在 server/.env（已被 .gitignore 忽略，格式见 .env.example），启动时自动读取；同名的系统环境变量优先。
+# 环境变量说明见 server/README.md。
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+  # 流式回答依赖逐段 flush，不开启 gzip
+  compression:
+    enabled: false
+
+spring:
+  application:
+    name: pestai-server
+  config:
+    import:
+      - classpath:suggestions.yml
+      # 本机密钥文件：从 server/ 目录启动时为 ./.env，从仓库根目录启动时为 ./server/.env
+      - optional:file:./.env[.properties]
+      - optional:file:./server/.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/pestai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 2
+      connection-timeout: 10000
+  servlet:
+    multipart:
+      # 单个图片不超过 2MB；请求整体留出 multipart 分隔符与 mode 字段的余量
+      max-file-size: 2MB
+      max-request-size: 3MB
+  mvc:
+    async:
+      # SseEmitter 自带 1800 秒（pestai.ai.stream-timeout-seconds）超时，这里只作为兜底
+      request-timeout: 1810000
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+pestai:
+  # App 访问服务器的地址（Android 模拟器访问本机为 http://10.0.2.2:8080），图片地址 = 该地址 + /files/ + 相对路径
+  public-base-url: ${PESTAI_PUBLIC_BASE_URL:http://10.0.2.2:8080}
+  # 文件根目录；为空时 Windows 用 ./data/files，其他系统用 /data/pestai/files
+  file-root: ${PESTAI_FILE_ROOT:}
+  # 安装包下载地址前缀（预留）；为空时为 public-base-url + /download/
+  download-base-url: ${PESTAI_DOWNLOAD_BASE_URL:}
+  jwt:
+    # HS256 密钥，至少 32 字节；为空时使用开发默认值（启动日志告警），生产环境必须配置
+    secret: ${JWT_SECRET:}
+    ttl-days: 30
+  ai:
+    max-questions-per-minute: 10
+    # 单次回答的总时长上限（秒）；放宽到 30 分钟，避免长回答 / 深度思考被打断
+    stream-timeout-seconds: 1800
+  # Key 未配置时 Mock 实现的行为
+  mock:
+    vision-delay-ms: ${PESTAI_MOCK_VISION_DELAY_MS:1500}
+    image-bad-percent: ${PESTAI_MOCK_IMAGE_BAD_PERCENT:5}
+    chat-chunk-delay-ms: ${PESTAI_MOCK_CHAT_CHUNK_DELAY_MS:40}
+
+# 识图：通义千问（DashScope 兼容 Chat Completions 接口，北京地域）；qwen3.8-max 为原生支持图片的旗舰模型
+vision:
+  display-name: ${VISION_DISPLAY_NAME:通义千问}
+  api-key: ${DASHSCOPE_API_KEY:}
+  url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  model: ${VISION_MODEL:qwen3.8-max}
+  # 深度思考会明显拉长耗时，识别要在 25 秒内返回，默认关闭
+  enable-thinking: ${VISION_ENABLE_THINKING:false}
+  timeout-seconds: 25
+  min-retry-millis: 3000
+  temperature: 0.1
+
+# 问答：DeepSeek（流式）；deepseek-flash（DeepSeek-V4.1-Flash）是 DeepSeek 唯一支持图片输入的模型
+chat:
+  api-key: ${DEEPSEEK_API_KEY:}
+  url: https://api.deepseek.com/chat/completions
+  model: ${CHAT_MODEL:deepseek-flash}
+  # 问答模型能否直接看图；换成纯文本模型（如 deepseek-v4-pro）时必须改为 false，带图提问会自动改用识图模型
+  image-input: ${CHAT_IMAGE_INPUT:true}
+  read-timeout-seconds: 120
+  temperature: 0.7
+  # 单次回答最多生成的 token（含思考过程）：默认 393216 为 DeepSeek 允许的上限，相当于不限制；设为 0 则不传该参数
+  max-tokens: ${CHAT_MAX_TOKENS:393216}
+  # 思考强度 none / low / high / max（平台默认 high）
+  reasoning-effort: ${CHAT_REASONING_EFFORT:high}
+
+# 短信：auto（阿里云 AccessKey 与签名齐全时用阿里云，否则只打印日志）/ log / aliyun
+# 阿里云「号码认证服务 · 短信认证」（SendSmsVerifyCode）：赠送签名必须搭配赠送模板，模板变量 ${code}、${min}
+sms:
+  provider: ${SMS_PROVIDER:auto}
+  aliyun:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:}
+    # 登录 / 注册模板（也是兜底模板）、重置密码模板、绑定新手机号模板（找回账号，发往新手机号）、
+    # 修改绑定手机号模板（更换手机号，发往新手机号）、验证绑定手机号模板（注销账号 / 生成恢复码，发往当前手机号）
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}
+    template-reset: ${ALIYUN_SMS_TEMPLATE_RESET:100003}
+    template-rebind: ${ALIYUN_SMS_TEMPLATE_REBIND:100004}
+    template-change-phone: ${ALIYUN_SMS_TEMPLATE_CHANGE_PHONE:100002}
+    template-verify: ${ALIYUN_SMS_TEMPLATE_VERIFY:100005}
+    valid-minutes: 5
+    endpoint: https://dypnsapi.aliyuncs.com/
+
+logging:
+  level:
+    com.heban.pestai.server: INFO

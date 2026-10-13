@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 记录行高（双行列表项） -->
+    <dimen name="record_row_height">72dp</dimen>
+    <!-- 左滑露出的删除按钮宽度，也是内容层最大平移距离 -->
+    <dimen name="record_delete_width">88dp</dimen>
+    <!-- 同一天记录的分组容器圆角 -->
+    <dimen name="record_group_radius">12dp</dimen>
+    <!-- 日期组之间的间距 -->
+    <dimen name="record_group_gap">16dp</dimen>
+    <!-- 缩略图 48dp，圆角 12dp -->
+    <dimen name="record_thumb_size">48dp</dimen>
+    <dimen name="record_thumb_radius">12dp</dimen>
+</resources>

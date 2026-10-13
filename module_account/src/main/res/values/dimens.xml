@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="account_logo_large">112dp</dimen>
+    <dimen name="account_logo_small">56dp</dimen>
+    <dimen name="account_illustration_size">280dp</dimen>
+    <dimen name="account_float_chip_height">40dp</dimen>
+    <dimen name="account_step_circle">28dp</dimen>
+    <dimen name="account_progress_height">4dp</dimen>
+    <dimen name="account_strength_height">4dp</dimen>
+    <dimen name="account_avatar_size">96dp</dimen>
+    <dimen name="account_avatar_badge">36dp</dimen>
+    <dimen name="account_field_gap">20dp</dimen>
+</resources>

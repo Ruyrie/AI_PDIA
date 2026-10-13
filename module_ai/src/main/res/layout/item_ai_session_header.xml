@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q03 分组标题：今天 / 昨天 / 近 7 天 / 更早，TitleSmall primary 色；组间距 16dp（第一组 8dp，由代码设置），与下方分组 8dp -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ai_session_header"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:accessibilityHeading="true"
+    android:paddingStart="4dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="8dp"
+    android:textAppearance="?attr/textAppearanceTitleSmall"
+    android:textColor="?attr/colorPrimary" />

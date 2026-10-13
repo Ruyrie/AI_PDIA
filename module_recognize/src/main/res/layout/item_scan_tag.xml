@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R01 特征标签：高 24dp，圆角 8dp，12sp Medium；底色与文字色由 RecognizeBindingAdapters 按样式设置 -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.Pest.Tag"
+    android:layout_width="wrap_content"
+    tools:text="卵菌病害" />

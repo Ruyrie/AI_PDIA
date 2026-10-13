@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A12 账号恢复码：顶栏、说明卡（secondaryContainer）、当前状态、验证当前手机号 + 验证码（10 分钟内刚通过短信验证时
+    改为「你刚刚已通过短信验证，可以直接生成」）、生成 / 重新生成；
+    生成后显示结果卡（surfaceContainerHigh，大号等宽字）+ 复制 + 「我已抄写或截图保存」+ 完成。
+    引导模式（from_register）：标题「保存账号恢复码」（页面代码设置）、说明改为「账号已创建…」、不显示当前状态行、
+    按钮下方「稍后再说」；生成失败时按钮上方显示原因，按钮变为「重试」。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.account.ui.recovery.RecoveryCodeViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/recovery_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/recovery_toolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            app:title="@string/account_recovery_title"
+            app:titleTextAppearance="@style/TextAppearance.Pest.TitleLarge.Medium" />
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/recovery_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/pest_form_margin"
+                android:paddingTop="16dp"
+                android:paddingEnd="@dimen/pest_form_margin"
+                android:paddingBottom="24dp">
+
+                <!-- 说明卡：secondaryContainer 底，圆角 16dp -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/pest_bg_card"
+                    android:backgroundTint="?attr/colorSecondaryContainer"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_info"
+                            app:tint="?attr/colorOnSecondaryContainer" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:minHeight="24dp"
+                            android:text="@{vm.guide ? @string/account_recovery_guide_desc : @string/account_recovery_info_title}"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnSecondaryContainer" />
+                    </LinearLayout>
+
+                    <include
+                        layout="@layout/view_account_bullet_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="8dp"
+                        app:text="@{@string/account_recovery_info_once}" />
+
+                    <include
+                        layout="@layout/view_account_bullet_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="4dp"
+                        app:text="@{@string/account_recovery_info_secret}" />
+
+                    <include
+                        layout="@layout/view_account_bullet_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="4dp"
+                        app:text="@{@string/account_recovery_info_regenerate}" />
+
+                    <include
+                        layout="@layout/view_account_bullet_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="4dp"
+                        app:text="@{@string/account_recovery_info_used}" />
+                </LinearLayout>
+
+                <!-- 当前状态（引导模式不显示：账号刚创建） -->
+                <TextView
+                    android:id="@+id/recovery_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@{vm.statusText}"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    app:visible="@{!vm.guide}"
+                    tools:text="当前状态：未生成" />
+
+                <!-- ========== 验证并生成 ========== -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:visible="@{!vm.showResult}">
+
+                    <!-- 需要短信验证码：验证当前手机号 + 验证码 -->
+                    <LinearLayout
+                        android:id="@+id/recovery_verify_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:visible="@{vm.needCode}">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="@{vm.verifyTitle}"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            tools:text="验证当前手机号 138****5678" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recovery_sms_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:hint="@string/account_code"
+                            app:accountCodeActionEnabled="@{vm.canSendCode}"
+                            app:accountHelper="@{vm.codeHint}"
+                            app:accountHelperError="@{vm.codeHintError}"
+                            app:placeholderText="@string/account_code_placeholder"
+                            app:suffixText="@{vm.countdownText}">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/recovery_sms_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionDone"
+                                android:inputType="number"
+                                android:maxLength="6"
+                                android:text="@={vm.code}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <!-- 10 分钟内刚通过短信验证：免验证码直接生成 -->
+                    <LinearLayout
+                        android:id="@+id/recovery_direct_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        app:visible="@{vm.direct}"
+                        tools:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_check_circle_fill"
+                            app:tint="?attr/colorPrimary" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/account_recovery_verified_recently"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <!-- 引导模式生成失败：原因 + 按钮变为「重试」 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        app:visible="@{vm.generateError != null}"
+                        tools:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_error"
+                            app:tint="?attr/colorError" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:accessibilityLiveRegion="polite"
+                            android:text="@{vm.generateError}"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorError"
+                            tools:text="网络连接失败，请检查网络后重试" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            style="@style/Widget.Pest.Button"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/pest_button_height_form"
+                            android:enabled="@{vm.canGenerate}"
+                            android:onClick="@{() -> vm.generate()}"
+                            app:accountGenerateAgain="@{vm.generated}"
+                            app:accountGenerateLoading="@{vm.generating}"
+                            app:accountGenerateRetry="@{vm.generateError != null}" />
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:elevation="8dp"
+                            android:indeterminate="true"
+                            app:indicatorColor="?attr/colorOnSurfaceVariant"
+                            app:indicatorSize="24dp"
+                            app:trackThickness="3dp"
+                            app:visible="@{vm.generating}" />
+                    </FrameLayout>
+
+                    <!-- 引导模式：稍后再说 → 首页（生成中置灰） -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/recovery_later"
+                        style="@style/Widget.Pest.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="8dp"
+                        android:enabled="@{!vm.generating}"
+                        android:text="@string/account_recovery_later"
+                        app:onSafeClick="@{() -> vm.later()}"
+                        app:visible="@{vm.guide}"
+                        tools:visibility="gone" />
+                </LinearLayout>
+
+                <!-- ========== 结果 ========== -->
+                <LinearLayout
+                    android:id="@+id/recovery_result"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:visible="@{vm.showResult}"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:text="@string/account_recovery_result_label"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <!-- 恢复码卡：surfaceContainerHigh 底，大号等宽字，字间距加大 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/pest_bg_card"
+                        android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:paddingStart="16dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="12dp">
+
+                        <TextView
+                            android:id="@+id/recovery_code_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.12"
+                            android:maxLines="1"
+                            android:text="@{vm.recoveryCode}"
+                            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="26sp"
+                            android:textStyle="bold"
+                            tools:text="ABCD-EFGH-JKLM" />
+
+                        <com.google.android.material.button.MaterialButton
+                            style="@style/Widget.Pest.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/account_recovery_copy"
+                            app:icon="@drawable/ic_content_copy"
+                            app:onSafeClick="@{() -> vm.copy()}" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/account_recovery_result_hint"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorError" />
+
+                    <!-- 确认复选框：点文字同样切换 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/recovery_saved"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="-15dp"
+                            android:checked="@={vm.saved}"
+                            android:contentDescription="@string/account_recovery_saved" />
+
+                        <TextView
+                            android:id="@+id/recovery_saved_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:importantForAccessibility="no"
+                            android:minHeight="@dimen/pest_touch_target"
+                            android:text="@string/account_recovery_saved"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        style="@style/Widget.Pest.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/pest_button_height_form"
+                        android:layout_marginTop="24dp"
+                        android:enabled="@{vm.saved}"
+                        android:text="@string/account_done"
+                        app:onSafeClick="@{() -> vm.done()}" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</layout>

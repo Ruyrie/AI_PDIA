@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 调试版：允许以 HTTP 访问本机 / 局域网开发服务器（模拟器访问本机为 10.0.2.2） -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

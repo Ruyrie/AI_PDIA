@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 日期标题：今天 / 昨天 / 10月08日 / 2025年12月30日。14sp Medium onSurfaceVariant；组间距 16dp（第一组除外），与下方分组 8dp -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+        <variable
+            name="row"
+            type="com.heban.pestai.record.ui.HistoryRow" />
+    </data>
+
+    <TextView
+        android:id="@+id/record_header_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:paddingTop="@{row.first ? 0f : @dimen/record_group_gap}"
+        android:paddingBottom="8dp"
+        android:text="@{row.title}"
+        android:textAppearance="@style/TextAppearance.Pest.TitleSmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+</layout>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- 顶栏右侧拍照入口（onSurfaceVariant，由图标的 colorControlNormal 着色） -->
+    <item
+        android:id="@+id/record_action_scan"
+        android:icon="@drawable/ic_photo_camera"
+        android:title="@string/record_scan"
+        app:showAsAction="always" />
+</menu>

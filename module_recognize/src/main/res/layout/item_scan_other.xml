@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R01「其他可能」一行：名称 + 72 × 4dp 小进度条 + 32dp 宽百分比，行高 52dp -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="item"
+            type="com.heban.pestai.common.vo.CandidateVO" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@{item.name}"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            tools:text="黄瓜细菌性角斑病" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:max="100"
+            app:indicatorColor="?attr/colorOutline"
+            app:indicatorTrackGapSize="0dp"
+            app:scanBarPercent="@{item.confidence}"
+            app:trackColor="?attr/colorSurfaceContainerHighest"
+            app:trackCornerRadius="2dp"
+            app:trackStopIndicatorSize="0dp"
+            app:trackThickness="4dp" />
+
+        <TextView
+            android:layout_width="32dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:gravity="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            app:scanPercentText="@{item.confidence}"
+            tools:text="6%" />
+    </LinearLayout>
+</layout>

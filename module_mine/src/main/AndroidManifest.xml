@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!-- M02 设置 -->
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- M03 关于 -->
+        <activity
+            android:name=".ui.about.AboutActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.ABOUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- 用户协议 / 隐私政策（参数 agreement_type：USER / PRIVACY） -->
+        <activity
+            android:name=".ui.agreement.AgreementActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.AGREEMENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

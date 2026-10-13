@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_home（H01 首页，模块04）文案，home_ 前缀 -->
+<resources>
+    <!-- 问候栏 -->
+    <string name="home_history_desc">识别记录</string>
+    <string name="home_avatar_desc">我的</string>
+
+    <!-- 拍照识别卡 -->
+    <string name="home_scan_title">拍一拍，识别病虫害</string>
+    <string name="home_scan_desc">对准发病的叶片、果实或虫体拍照，AI 几秒内给出诊断</string>
+    <string name="home_scan_camera">拍照识别</string>
+    <string name="home_scan_album">从相册选择</string>
+
+    <!-- 识别模式 -->
+    <string name="home_mode_title">识别模式</string>
+    <string name="home_mode_pest">病虫害</string>
+    <string name="home_mode_pest_desc">病斑、虫体、虫害</string>
+    <string name="home_mode_crop">作物 / 杂草</string>
+    <string name="home_mode_crop_desc">认作物、辨杂草</string>
+
+    <!-- AI 入口卡 -->
+    <string name="home_ai_title">有种植问题？问问 AI</string>
+    <string name="home_ai_desc">支持文字和图片提问，可追问识别结果</string>
+
+    <!-- 最近识别 -->
+    <string name="home_recent_title">最近识别</string>
+    <string name="home_recent_all">全部</string>
+    <string name="home_recent_empty">还没有识别记录，拍一张试试</string>
+    <string name="home_recent_loading">正在加载最近识别</string>
+    <string name="home_guest_hint">登录后查看识别记录</string>
+    <string name="home_guest_login">去登录</string>
+
+    <!-- 登录提示对话框 -->
+    <string name="home_login_dialog_title">登录后才能使用</string>
+    <string name="home_login_dialog_confirm">去登录</string>
+
+    <!-- 其他 -->
+    <string name="home_feature_unavailable">该功能暂不可用</string>
+</resources>

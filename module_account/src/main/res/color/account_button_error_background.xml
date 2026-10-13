@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A11「注销账号」主按钮底色：error；禁用时与普通填充按钮一致（onSurface 12%） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.12" android:color="?attr/colorOnSurface" android:state_enabled="false" />
+    <item android:color="?attr/colorError" />
+</selector>

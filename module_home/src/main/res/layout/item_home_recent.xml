@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 首页最近识别的一行（72dp）：直接绑定 RecordItemVO，各控件由 HomeBindingAdapters 格式化 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="item"
+            type="com.heban.pestai.common.vo.RecordItemVO" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="?attr/selectableItemBackground"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <!-- 48dp 缩略图：底层为占位 / 失败图标，上层为 Glide 加载的照片 -->
+        <FrameLayout
+            android:id="@+id/home_recent_thumb_box"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/home_bg_thumb"
+            android:clipToOutline="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/home_recent_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                app:homeRecordIcon="@{item}"
+                tools:src="@drawable/ic_image" />
+
+            <ImageView
+                android:id="@+id/home_recent_thumb"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                app:homeRecordThumb="@{item}" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/home_recent_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            app:homeRecordTitle="@{item}"
+            app:layout_constraintBottom_toTopOf="@id/home_recent_meta"
+            app:layout_constraintEnd_toStartOf="@id/home_recent_tag"
+            app:layout_constraintStart_toEndOf="@id/home_recent_thumb_box"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:layout_goneMarginEnd="0dp"
+            tools:text="黄瓜霜霉病" />
+
+        <TextView
+            android:id="@+id/home_recent_meta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            app:homeRecordMeta="@{item}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/home_recent_tag"
+            app:layout_constraintStart_toEndOf="@id/home_recent_thumb_box"
+            app:layout_constraintTop_toBottomOf="@id/home_recent_title"
+            app:layout_goneMarginEnd="0dp"
+            tools:text="病虫害 · 匹配度 92% · 今天 14:20" />
+
+        <TextView
+            android:id="@+id/home_recent_tag"
+            style="@style/Widget.Pest.Tag"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/pest_tag_height"
+            app:homeRecordTag="@{item}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="中度" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

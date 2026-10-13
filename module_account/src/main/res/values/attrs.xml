@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A07 / A08 / A09 顶部步骤条 -->
+    <declare-styleable name="AccountStepBar">
+        <attr name="accountStepFirst" format="string" />
+        <attr name="accountStepSecond" format="string" />
+        <attr name="accountStep" format="integer" />
+    </declare-styleable>
+</resources>

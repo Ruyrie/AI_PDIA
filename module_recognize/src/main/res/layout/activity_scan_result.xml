@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R01 识别结果：照片区（识别框 + 模式与时间标签）、结论卡、识别依据、其他可能；底部「重新识别」「追问 AI」 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.recognize.ui.result.ResultViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/resultRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/resultToolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            app:title="@string/scan_result_title">
+
+            <ImageButton
+                android:id="@+id/resultHistory"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/scan_history"
+                android:src="@drawable/ic_history"
+                app:onSafeClick="@{() -> vm.openHistory()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/resultContent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                app:visible="@{vm.uiState == UiState.SUCCESS}">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp">
+
+                    <!-- 照片区：176dp，圆角 16dp -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/resultPhotoCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="176dp"
+                        android:background="@drawable/scan_bg_photo_16"
+                        android:clipToOutline="true">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
+
+                            <ImageView
+                                android:id="@+id/resultPhotoStateIcon"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_image"
+                                app:tint="?attr/colorOutline" />
+
+                            <TextView
+                                android:id="@+id/resultPhotoStateText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="@string/scan_photo_loading"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOutline" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/resultPhoto"
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:contentDescription="@string/scan_analyzing_photo_desc"
+                            android:scaleType="centerCrop"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <!-- 识别框：左 30%、上 26%、宽 34%、高 46%，病虫害模式且非健康时显示 -->
+                        <View
+                            android:id="@+id/resultBox"
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:background="@drawable/scan_box"
+                            android:importantForAccessibility="no"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintHeight_percent="0.46"
+                            app:layout_constraintHorizontal_bias="0.45"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintVertical_bias="0.48"
+                            app:layout_constraintWidth_percent="0.34"
+                            app:visible="@{vm.showBox}" />
+
+                        <!-- 照片标签：左下角 -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="@drawable/scan_bg_photo_label"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:importantForAccessibility="no"
+                                app:scanModeIcon="@{vm.record.mode}"
+                                app:tint="?attr/colorOnPrimary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:maxLines="1"
+                                android:text="@{vm.photoLabel}"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnPrimary"
+                                tools:text="病虫害识别 · 今天 14:20" />
+                        </LinearLayout>
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <!-- 结论卡 -->
+                    <LinearLayout
+                        android:id="@+id/resultConclusionCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/pest_bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/scan_result_most_likely"
+                                    android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                                <TextView
+                                    android:id="@+id/resultTopName"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@{vm.record.topName}"
+                                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                                    tools:text="黄瓜霜霉病" />
+                            </LinearLayout>
+
+                            <!-- 严重程度标签：高 32dp，全圆角，图标 18dp -->
+                            <TextView
+                                android:id="@+id/resultSeverity"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:layout_marginStart="12dp"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/pest_bg_pill"
+                                android:drawablePadding="4dp"
+                                android:gravity="center_vertical"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
+                                app:scanSeverity="@{vm.record.severity}"
+                                tools:text="中度" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.progressindicator.LinearProgressIndicator
+                                android:id="@+id/resultConfidenceBar"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:max="100"
+                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorTrackGapSize="0dp"
+                                app:trackColor="?attr/colorSecondaryContainer"
+                                app:trackCornerRadius="4dp"
+                                app:trackStopIndicatorSize="0dp"
+                                app:trackThickness="8dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
+                                app:scanConfidenceText="@{vm.record.confidence}"
+                                tools:text="匹配度 92%" />
+                        </LinearLayout>
+
+                        <!-- 特征标签 -->
+                        <LinearLayout
+                            android:id="@+id/resultTags"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal"
+                            app:scanTags="@{vm.tags}" />
+                    </LinearLayout>
+
+                    <!-- 识别依据 -->
+                    <LinearLayout
+                        android:id="@+id/resultEvidenceCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/scan_bg_evidence"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="14dp"
+                        app:scanVisibleIfNotEmpty="@{vm.record.evidence}">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_fact_check"
+                            app:tint="?attr/colorPrimary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/scan_result_evidence"
+                                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="@{vm.record.evidence}"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                tools:text="叶面出现受叶脉限制的黄色多角形病斑，叶背有灰黑色霉层，与霜霉病典型症状一致。" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 其他可能 -->
+                    <LinearLayout
+                        android:id="@+id/resultOthersGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical"
+                        app:scanVisibleIfNotEmpty="@{vm.record.others}">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/scan_result_others"
+                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/resultOthers"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/pest_bg_card_12"
+                            android:nestedScrollingEnabled="false"
+                            android:overScrollMode="never"
+                            app:scanCandidates="@{vm.record.others}"
+                            tools:itemCount="2"
+                            tools:listitem="@layout/item_scan_other" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/resultFooter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:text="@{vm.footerText}"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        tools:text="由 DeepSeek 识别 · 结果仅供参考，已保存到识别记录" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- 加载中 -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                app:visible="@{vm.uiState == UiState.LOADING}" />
+
+            <!-- 加载失败 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"
+                android:visibility="gone"
+                app:visible="@{vm.uiState == UiState.ERROR}">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_error"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="@{vm.errorText}"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="网络连接失败，请检查网络后重试" />
+
+                <com.google.android.material.button.MaterialButton
+                    style="@style/Widget.Pest.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@{vm.errorRetryable ? @string/scan_result_reload : @string/scan_result_back}"
+                    app:onSafeClick="@{() -> vm.onErrorAction()}"
+                    tools:text="@string/scan_result_reload" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- 底部按钮栏 -->
+        <LinearLayout
+            android:id="@+id/resultBottomBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:visible="@{vm.uiState == UiState.SUCCESS}">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorSurfaceContainerHighest" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="24dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/resultRetry"
+                    style="@style/Widget.Pest.Button.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:enabled="@{!vm.retrying}"
+                    android:text="@{vm.retrying ? @string/scan_result_retrying : @string/scan_result_retry}"
+                    app:icon="@drawable/ic_refresh"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconSize="18dp"
+                    app:onSafeClick="@{() -> vm.retry()}"
+                    app:scanLoading="@{vm.retrying}"
+                    tools:text="@string/scan_result_retry" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/resultAskAi"
+                    style="@style/Widget.Pest.Button.Medium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:enabled="@{!vm.retrying}"
+                    android:text="@string/scan_result_ask_ai"
+                    app:icon="@drawable/ic_auto_awesome"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconSize="18dp"
+                    app:onSafeClick="@{() -> vm.askAi()}" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</layout>

@@ -2,8 +2,16 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+// BASE_URL 从 local.properties 读取（不提交到仓库），缺省指向模拟器访问本机后端的地址
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+def baseUrl = localProps.getProperty('BASE_URL', 'http://10.0.2.2:8080')
+
 android {
-    namespace 'com.example.ai_pdia'
+    namespace 'com.heban.pestai'
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -11,13 +19,14 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.ai_pdia"
+        applicationId "com.heban.pestai"
         minSdk 31
         targetSdk 36
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "BASE_URL", "\"${baseUrl}\""
     }
 
     buildTypes {
@@ -30,13 +39,25 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    buildFeatures {
+        buildConfig true
+        dataBinding true
+        viewBinding true
+    }
 }
 
 dependencies {
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.activity
-    implementation libs.constraintlayout
+    implementation project(':lib_base')
+    implementation project(':lib_common')
+    implementation project(':lib_network')
+    implementation project(':module_account')
+    implementation project(':module_home')
+    implementation project(':module_recognize')
+    implementation project(':module_record')
+    implementation project(':module_ai')
+    implementation project(':module_mine')
+    annotationProcessor libs.dagger.compiler
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

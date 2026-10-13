@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    R03 识别记录 / R04 空状态（同一页面的不同 UiState）。
+    顶栏 64dp（返回、标题、拍照）→ 筛选 Chip →
+    列表区：居中进度（LOADING）/ 下拉刷新 + 分组列表（SUCCESS）/ 空状态与错误态（EMPTY、ERROR 共用一套居中布局）。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.record.ui.HistoryViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/history_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/history_toolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            android:paddingEnd="4dp"
+            app:contentInsetStartWithNavigation="0dp"
+            app:menu="@menu/record_history"
+            app:title="@string/record_title"
+            app:titleMarginStart="0dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/history_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/pest_page_margin"
+            android:paddingTop="4dp"
+            android:paddingEnd="@dimen/pest_page_margin"
+            android:paddingBottom="12dp"
+            app:chipSpacingHorizontal="8dp"
+            app:recordFilter="@{vm.filter}"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/history_chip_all"
+                style="@style/Widget.Pest.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/record_filter_all"
+                app:ensureMinTouchTargetSize="false" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/history_chip_pest"
+                style="@style/Widget.Pest.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/record_filter_pest"
+                app:ensureMinTouchTargetSize="false" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/history_chip_crop"
+                style="@style/Widget.Pest.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/record_filter_crop"
+                app:ensureMinTouchTargetSize="false" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:animateLayoutChanges="true">
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/history_refresh"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:enabled="@{vm.uiState == UiState.SUCCESS}"
+                app:refreshing="@{vm.refreshing}"
+                app:visible="@{vm.uiState == UiState.SUCCESS}">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/history_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingStart="@dimen/pest_page_margin"
+                    android:paddingEnd="@dimen/pest_page_margin"
+                    android:paddingBottom="24dp"
+                    android:scrollbarStyle="outsideOverlay"
+                    android:scrollbars="vertical"
+                    tools:listitem="@layout/item_record" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/history_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                app:indicatorColor="?attr/colorPrimary"
+                app:visible="@{vm.uiState == UiState.LOADING}" />
+
+            <LinearLayout
+                android:id="@+id/history_state"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingStart="40dp"
+                android:paddingEnd="40dp"
+                android:paddingBottom="120dp"
+                app:visible="@{vm.uiState == UiState.EMPTY || vm.uiState == UiState.ERROR}"
+                tools:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/history_state_icon"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="@drawable/pest_bg_circle"
+                    android:importantForAccessibility="no"
+                    android:padding="32dp"
+                    android:scaleType="fitCenter"
+                    app:recordStateError="@{vm.uiState == UiState.ERROR}"
+                    tools:src="@drawable/ic_image_search" />
+
+                <TextView
+                    android:id="@+id/history_state_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    app:recordStateTitleError="@{vm.uiState == UiState.ERROR}"
+                    app:recordStateTitleFiltered="@{vm.emptyFiltered}"
+                    android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                    tools:text="@string/record_empty_title" />
+
+                <TextView
+                    android:id="@+id/history_state_desc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    app:recordStateDescError="@{vm.uiState == UiState.ERROR}"
+                    app:recordStateDescErrorText="@{vm.errorText}"
+                    app:recordStateDescFiltered="@{vm.emptyFiltered}"
+                    app:recordStateDescFilterLabel="@{vm.filter.label}"
+                    android:textAppearance="@style/TextAppearance.Pest.BodyMedium"
+                    tools:text="@string/record_empty_desc" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/history_state_button"
+                    style="@style/Widget.Pest.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="24dp"
+                    android:paddingEnd="24dp"
+                    android:text="@{vm.uiState == UiState.ERROR ? @string/record_retry : @string/record_go_scan}"
+                    app:iconPadding="8dp"
+                    app:iconSize="18dp"
+                    app:onSafeClick="@{() -> vm.onStateAction()}"
+                    app:recordStateButtonError="@{vm.uiState == UiState.ERROR}"
+                    tools:icon="@drawable/ic_photo_camera"
+                    tools:text="@string/record_go_scan" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</layout>

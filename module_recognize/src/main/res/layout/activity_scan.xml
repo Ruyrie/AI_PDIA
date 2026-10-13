@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 拍照识别：深色相机页。上部取景区占满剩余高度，下部操作区固定 220dp -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.heban.pestai.recognize.model.RecognizeMode" />
+
+        <import type="com.heban.pestai.recognize.model.PermissionState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.recognize.ui.scan.ScanViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/scanRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/scan_controls_bg">
+
+        <!-- ========== 取景区 ========== -->
+        <FrameLayout
+            android:id="@+id/scanViewfinder"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/scan_viewfinder_bg"
+            app:layout_constraintBottom_toTopOf="@id/scanControls"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/scanPreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/scan_viewfinder_bg"
+                app:scaleType="fillCenter"
+                app:visible="@{vm.permissionState == PermissionState.GRANTED}" />
+
+            <!-- 预览出现前的占位（预览开始输出画面后由 Activity 隐藏） -->
+            <ImageView
+                android:id="@+id/scanPlaceholder"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_eco"
+                app:tint="@color/scan_placeholder_icon" />
+
+            <!-- 拍下瞬间闪白 -->
+            <View
+                android:id="@+id/scanFlashOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0"
+                android:background="@color/scan_on_dark"
+                android:importantForAccessibility="no" />
+
+            <!-- 取景框：280dp，四个白色角标，只用于对准参考 -->
+            <FrameLayout
+                android:id="@+id/scanFrame"
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                app:visible="@{!vm.permissionState.denied}">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="top|start"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/scan_viewfinder_corner" />
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="top|end"
+                    android:importantForAccessibility="no"
+                    android:scaleX="-1"
+                    android:src="@drawable/scan_viewfinder_corner" />
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|start"
+                    android:importantForAccessibility="no"
+                    android:scaleY="-1"
+                    android:src="@drawable/scan_viewfinder_corner" />
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|end"
+                    android:importantForAccessibility="no"
+                    android:rotation="180"
+                    android:src="@drawable/scan_viewfinder_corner" />
+            </FrameLayout>
+
+            <!-- 提示胶囊 -->
+            <LinearLayout
+                android:id="@+id/scanHintPill"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/scan_bg_hint"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                app:visible="@{!vm.permissionState.denied}">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_lightbulb"
+                    app:tint="@color/scan_on_dark" />
+
+                <TextView
+                    android:id="@+id/scanHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:maxLines="1"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/scan_on_dark"
+                    tools:text="@string/scan_hint_pest" />
+            </LinearLayout>
+
+            <!-- 权限说明层（未授权时取代取景框与提示胶囊） -->
+            <LinearLayout
+                android:id="@+id/scanPermissionLayer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:visible="@{vm.permissionState.denied}">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_no_photography"
+                    app:tint="@color/scan_on_dark_variant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/scan_permission_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/scan_on_dark" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="48dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="48dp"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:text="@{vm.permissionDesc}"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/scan_on_dark_variant"
+                    tools:text="@string/scan_permission_desc" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/scanPermissionButton"
+                    style="@style/Widget.Pest.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@{vm.permissionButtonText}"
+                    android:textColor="@color/scan_on_accent"
+                    app:backgroundTint="@color/scan_accent"
+                    app:onSafeClick="@{() -> vm.onPermissionButtonClick()}"
+                    tools:text="@string/scan_permission_grant" />
+            </LinearLayout>
+
+            <!-- 顶部栏：透明，浮在取景区上 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_gravity="top"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <ImageButton
+                    android:id="@+id/scanClose"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/scan_close"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/scan_on_dark" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/scan_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/scan_on_dark" />
+
+                <ImageButton
+                    android:id="@+id/scanFlash"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:onClick="@{() -> vm.toggleFlash()}"
+                    android:visibility="gone"
+                    app:scanFlashOn="@{vm.flashOn}"
+                    app:tint="@color/scan_on_dark"
+                    app:visible="@{vm.hasFlash}" />
+            </FrameLayout>
+        </FrameLayout>
+
+        <!-- ========== 操作区 ========== -->
+        <LinearLayout
+            android:id="@+id/scanControls"
+            android:layout_width="0dp"
+            android:layout_height="220dp"
+            android:background="@color/scan_controls_bg"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <!-- 模式切换 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/scan_mode_desc"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/scanModePest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@drawable/scan_bg_mode_chip"
+                    android:gravity="center"
+                    android:onClick="@{() -> vm.selectMode(RecognizeMode.PEST)}"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="@string/scan_mode_pest"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/scan_mode_chip_text"
+                    app:selected="@{vm.mode == RecognizeMode.PEST}" />
+
+                <TextView
+                    android:id="@+id/scanModeCrop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/scan_bg_mode_chip"
+                    android:gravity="center"
+                    android:onClick="@{() -> vm.selectMode(RecognizeMode.CROP)}"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="@string/scan_mode_crop"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/scan_mode_chip_text"
+                    app:selected="@{vm.mode == RecognizeMode.CROP}" />
+            </LinearLayout>
+
+            <!-- 相册 / 快门 / 识别记录 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="20dp"
+                android:paddingStart="40dp"
+                android:paddingEnd="40dp">
+
+                <ImageButton
+                    android:id="@+id/scanAlbum"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:background="@drawable/scan_bg_album"
+                    android:contentDescription="@string/scan_pick_album"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:src="@drawable/ic_photo_library"
+                    app:tint="@color/scan_on_dark_variant" />
+
+                <FrameLayout
+                    android:id="@+id/scanShutter"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    android:alpha="@{vm.permissionState == PermissionState.GRANTED ? 1f : 0.38f}"
+                    android:background="@drawable/scan_shutter_ring"
+                    android:clickable="true"
+                    android:contentDescription="@string/scan_take_photo"
+                    android:enabled="@{vm.shutterEnabled}"
+                    android:focusable="true">
+
+                    <View
+                        android:id="@+id/scanShutterInner"
+                        android:layout_width="62dp"
+                        android:layout_height="62dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/scan_shutter_inner"
+                        android:duplicateParentState="true"
+                        android:stateListAnimator="@animator/scan_shutter_press" />
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/scanHistory"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="@drawable/scan_bg_history"
+                    android:contentDescription="@string/scan_history"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_history"
+                    app:onSafeClick="@{() -> vm.openHistory()}"
+                    app:tint="@color/scan_on_dark_variant" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:text="@string/scan_footer"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/scan_on_dark_variant" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    系统启动画面图标（Theme.SplashScreen，无图标底色：288dp 画布，可见区域为中心 192dp 圆）。
+    与 A01 Logo 一致：112dp primary 圆角方块（圆角 36dp）+ 64dp 白色 psychiatry 嫩芽。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:fillColor="@color/pest_primary"
+        android:pathData="M124,88H164A36,36 0,0 1,200 124V164A36,36 0,0 1,164 200H124A36,36 0,0 1,88 164V124A36,36 0,0 1,124 88Z" />
+    <group
+        android:scaleX="0.0666667"
+        android:scaleY="0.0666667"
+        android:translateX="112"
+        android:translateY="112">
+        <group android:translateY="960">
+            <path
+                android:fillColor="@color/pest_on_primary"
+                android:pathData="M451.5-131.5Q440-143 440-160v-279q-64 0-123-24.5T213-533q-45-45-69-104t-24-123v-40q0-17 11.5-28.5T160-840h40q63 0 122 24.5T426-746q31 31 51.5 68t31.5 79q5-7 11-13.5t13-13.5q45-45 104-69.5T760-720h40q17 0 28.5 11.5T840-680v40q0 64-24.5 123T746-413q-45 45-103.5 69T520-320v160q0 17-11.5 28.5T480-120q-17 0-28.5-11.5Z" />
+        </group>
+    </group>
+</vector>

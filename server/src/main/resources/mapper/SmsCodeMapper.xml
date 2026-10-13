@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.SmsCodeMapper">
+
+    <select id="selectLatest" resultType="com.heban.pestai.server.entity.SmsCode">
+        SELECT id, phone, scene, code, expire_at, used, created_at
+        FROM t_sms_code
+        WHERE phone = #{phone} AND scene = #{scene}
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.heban.pestai.server.entity.SmsCode"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_sms_code (phone, scene, code, expire_at, used, created_at, updated_at)
+        VALUES (#{phone}, #{scene}, #{code}, #{expireAt}, #{used}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="markUsed">
+        UPDATE t_sms_code
+        SET used = 1, updated_at = #{now}
+        WHERE id = #{id} AND used = 0
+    </update>
+
+    <delete id="deleteByPhone">
+        DELETE FROM t_sms_code WHERE phone = #{phone}
+    </delete>
+</mapper>

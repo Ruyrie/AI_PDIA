@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- M01 我的：MainActivity 第 3 个 Tab。状态栏间距由 MainActivity 统一处理，这里不再添加。 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.text.TextUtils" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.mine.ui.MineViewModel" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <!-- 顶部栏 64dp：标题 + 设置 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/mine_title"
+                android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+            <ImageButton
+                android:id="@+id/mine_btn_settings"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/mine_entry_settings"
+                android:src="@drawable/ic_settings"
+                app:onSafeClick="@{() -> vm.onSettingsClick()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- animateLayoutChanges：恢复码提醒卡片出现 / 关闭时淡入淡出，下方内容平滑移动 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:animateLayoutChanges="true"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/pest_page_margin"
+                android:paddingTop="4dp"
+                android:paddingEnd="@dimen/pest_page_margin"
+                android:paddingBottom="24dp">
+
+                <!-- 资料区：72dp 头像 + 昵称 / 手机号 · 地区（游客：未登录 + 登录 / 注册） -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="72dp"
+                        android:layout_height="72dp">
+
+                        <com.heban.pestai.base.widget.AvatarView
+                            android:id="@+id/mine_avatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:avatarImage="@{vm.user.avatarUrl}"
+                            app:avatarName="@{vm.avatarText}"
+                            app:avatarTextSize="30sp"
+                            app:invisible="@{vm.personAvatar}" />
+
+                        <ImageView
+                            android:id="@+id/mine_avatar_placeholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/pest_bg_circle"
+                            android:backgroundTint="?attr/colorSurfaceContainerHighest"
+                            android:importantForAccessibility="no"
+                            android:padding="18dp"
+                            android:src="@drawable/ic_person"
+                            app:tint="?attr/colorOnSurfaceVariant"
+                            app:visible="@{vm.personAvatar}" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/mine_tv_nickname"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@{vm.guest ? @string/mine_not_logged_in : vm.nameText}"
+                            android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                            tools:text="老李种菜" />
+
+                        <TextView
+                            android:id="@+id/mine_tv_phone_region"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@{vm.phoneRegion}"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            app:visible="@{!vm.guest}"
+                            tools:text="138****5678 · 江苏 南京" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/mine_btn_login"
+                            style="@style/Widget.Pest.Button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginTop="4dp"
+                            android:minWidth="0dp"
+                            android:minHeight="32dp"
+                            android:paddingStart="16dp"
+                            android:paddingTop="0dp"
+                            android:paddingEnd="16dp"
+                            android:paddingBottom="0dp"
+                            android:text="@string/mine_login_register"
+                            app:onSafeClick="@{() -> vm.onLoginClick()}"
+                            app:visible="@{vm.guest}" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!--
+                    未生成账号恢复码提醒：warningContainer 底、圆角 16dp；key 图标 + 标题 + 说明 +「去生成」（A12），
+                    右上角关闭后 7 天内不再显示。已生成、游客、状态查询失败时不显示。
+                -->
+                <FrameLayout
+                    android:id="@+id/mine_recovery_reminder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/pest_bg_card"
+                    android:backgroundTint="?attr/colorWarningContainer"
+                    app:visible="@{vm.showRecoveryReminder}"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="52dp"
+                        android:paddingBottom="16dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/mine_ic_key"
+                            app:tint="?attr/colorOnWarningContainer" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/mine_tv_recovery_reminder_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:minHeight="24dp"
+                                android:text="@string/mine_recovery_reminder_title"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
+                                android:textColor="?attr/colorOnWarningContainer" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/mine_recovery_reminder_desc"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnWarningContainer" />
+
+                            <!-- 与「去识别」一致的 32dp 实心按钮，warning 底（on 色取 onPrimary，深浅主题下与 warning 对比一致） -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/mine_btn_recovery_generate"
+                                style="@style/Widget.Pest.Button"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:layout_marginTop="12dp"
+                                android:minWidth="0dp"
+                                android:minHeight="32dp"
+                                android:paddingStart="16dp"
+                                android:paddingTop="0dp"
+                                android:paddingEnd="16dp"
+                                android:paddingBottom="0dp"
+                                android:text="@string/mine_recovery_reminder_action"
+                                android:textColor="?attr/colorOnPrimary"
+                                app:backgroundTint="?attr/colorWarning"
+                                app:onSafeClick="@{() -> vm.onRecoveryReminderClick()}" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 右上角关闭：48dp 触控区 -->
+                    <ImageButton
+                        android:id="@+id/mine_btn_recovery_close"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/mine_recovery_reminder_close"
+                        android:padding="12dp"
+                        android:src="@drawable/ic_close"
+                        app:onSafeClick="@{() -> vm.dismissRecoveryReminder()}"
+                        app:tint="?attr/colorOnWarningContainer" />
+                </FrameLayout>
+
+                <!-- 统计卡：三等分，格间 1dp outlineVariant 竖线 -->
+                <LinearLayout
+                    android:id="@+id/mine_stats_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/pest_bg_card"
+                    android:clipToOutline="true"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/mine_stat_total"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        app:onSafeClick="@{() -> vm.onStatClick(0)}">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@{vm.totalText}"
+                            android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                            tools:text="36" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="1"
+                            android:text="@string/mine_stat_total"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <LinearLayout
+                        android:id="@+id/mine_stat_pest"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        app:onSafeClick="@{() -> vm.onStatClick(1)}">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@{vm.pestKindsText}"
+                            android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                            tools:text="12" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="1"
+                            android:text="@string/mine_stat_pest_kinds"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <LinearLayout
+                        android:id="@+id/mine_stat_ai"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        app:onSafeClick="@{() -> vm.onStatClick(2)}">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@{vm.aiCountText}"
+                            android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                            tools:text="18" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="1"
+                            android:text="@string/mine_stat_ai"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 本月识别卡片：整张卡片与「去识别」都进入 S01（按钮作为子 View 先消费点击） -->
+                <LinearLayout
+                    android:id="@+id/mine_month_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/mine_bg_month_card"
+                    android:clipToOutline="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp"
+                    app:onSafeClick="@{() -> vm.onScanClick()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/mine_ic_center_focus_weak_fill"
+                        app:tint="?attr/colorOnPrimaryContainer" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/mine_tv_month"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:text="@{vm.monthText}"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnPrimaryContainer"
+                            tools:text="本月已识别 9 次" />
+
+                        <TextView
+                            android:id="@+id/mine_tv_last_record"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@{vm.lastRecordText}"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnPrimaryContainer"
+                            tools:text="最近一次：黄瓜霜霉病 · 今天 14:20" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/mine_btn_scan"
+                        style="@style/Widget.Pest.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:minWidth="0dp"
+                        android:minHeight="32dp"
+                        android:paddingStart="14dp"
+                        android:paddingTop="0dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="0dp"
+                        android:text="@string/mine_go_scan"
+                        app:onSafeClick="@{() -> vm.onScanClick()}" />
+                </LinearLayout>
+
+                <!-- 功能列表：识别记录 / AI 问答 / 设置 / 关于 -->
+                <LinearLayout
+                    android:id="@+id/mine_item_history"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/mine_bg_item_first"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/pest_list_item_one_line"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    app:onSafeClick="@{() -> vm.onHistoryClick()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_history"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:text="@string/mine_entry_history"
+                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    <TextView
+                        android:id="@+id/mine_tv_record_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="@{vm.recordCountText}"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        app:visible="@{!vm.guest &amp;&amp; !TextUtils.isEmpty(vm.recordCountText)}"
+                        tools:text="36 条" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/mine_item_ai"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pest_group_gap"
+                    android:background="@drawable/mine_bg_item_middle"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/pest_list_item_one_line"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    app:onSafeClick="@{() -> vm.onAskAiClick()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_auto_awesome"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:text="@string/mine_entry_ai"
+                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/mine_item_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pest_group_gap"
+                    android:background="@drawable/mine_bg_item_middle"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/pest_list_item_one_line"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    app:onSafeClick="@{() -> vm.onSettingsClick()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_settings"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:text="@string/mine_entry_settings"
+                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/mine_item_about"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pest_group_gap"
+                    android:background="@drawable/mine_bg_item_last"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/pest_list_item_one_line"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    app:onSafeClick="@{() -> vm.onAboutClick()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_info"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:text="@string/mine_entry_about"
+                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="@{vm.versionText}"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        tools:text="v1.0.0" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="16dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</layout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 项目自定义色彩角色：提醒类（中度标签、照片不清晰） -->
+    <attr name="colorWarning" format="color" />
+    <attr name="colorWarningContainer" format="color" />
+    <attr name="colorOnWarningContainer" format="color" />
+
+    <declare-styleable name="AvatarView">
+        <attr name="avatarTextSize" format="dimension" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    全项目主题（公共数据 · UI 设计规范）。只做浅色主题；相机页（S01）使用 Theme.Pest.Camera。
+    布局中只引用主题属性，例如 ?attr/colorPrimary、?attr/colorSurfaceContainerLow、?attr/colorWarningContainer。
+-->
+<resources>
+
+    <style name="Base.Theme.Pest" parent="Theme.Material3.Light.NoActionBar">
+        <!-- 色彩角色 -->
+        <item name="colorPrimary">@color/pest_primary</item>
+        <item name="colorOnPrimary">@color/pest_on_primary</item>
+        <item name="colorPrimaryContainer">@color/pest_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/pest_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/pest_inverse_primary</item>
+        <item name="colorSecondary">@color/pest_secondary</item>
+        <item name="colorOnSecondary">@color/pest_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/pest_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/pest_on_secondary_container</item>
+        <item name="colorTertiary">@color/pest_tertiary</item>
+        <item name="colorOnTertiary">@color/pest_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/pest_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/pest_on_tertiary_container</item>
+        <item name="colorError">@color/pest_error</item>
+        <item name="colorOnError">@color/pest_on_error</item>
+        <item name="colorErrorContainer">@color/pest_error_container</item>
+        <item name="colorOnErrorContainer">@color/pest_on_error_container</item>
+        <item name="android:colorBackground">@color/pest_surface</item>
+        <item name="colorOnBackground">@color/pest_on_surface</item>
+        <item name="colorSurface">@color/pest_surface</item>
+        <item name="colorOnSurface">@color/pest_on_surface</item>
+        <item name="colorSurfaceVariant">@color/pest_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/pest_on_surface_variant</item>
+        <item name="colorOutline">@color/pest_outline</item>
+        <item name="colorOutlineVariant">@color/pest_outline_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/pest_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/pest_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/pest_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/pest_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/pest_surface_container_highest</item>
+        <item name="colorSurfaceBright">@color/pest_surface</item>
+        <item name="colorSurfaceDim">@color/pest_surface_dim</item>
+        <item name="colorSurfaceInverse">@color/pest_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/pest_inverse_on_surface</item>
+        <item name="colorControlNormal">@color/pest_on_surface_variant</item>
+        <item name="colorWarning">@color/pest_warning</item>
+        <item name="colorWarningContainer">@color/pest_warning_container</item>
+        <item name="colorOnWarningContainer">@color/pest_on_warning_container</item>
+
+        <!-- 字阶（「四、字体与字号」） -->
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Pest.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Pest.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Pest.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Pest.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.Pest.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Pest.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Pest.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.Pest.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Pest.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Pest.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Pest.LabelSmall</item>
+
+        <!-- 组件默认样式 -->
+        <item name="materialButtonStyle">@style/Widget.Pest.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Pest.Button.Outlined</item>
+        <item name="textInputStyle">@style/Widget.Pest.TextInputLayout</item>
+        <item name="toolbarStyle">@style/Widget.Pest.Toolbar</item>
+        <item name="materialCardViewStyle">@style/Widget.Pest.Card</item>
+        <item name="bottomNavigationStyle">@style/Widget.Pest.BottomNavigation</item>
+        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+        <item name="snackbarStyle">@style/Widget.Material3.Snackbar</item>
+
+        <!-- 系统栏：透明，浅色背景配深色图标（Edge-to-Edge 由 BaseActivity 处理） -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/pest_surface</item>
+
+        <!-- 页面转场：进入从右侧滑入，返回反向滑出（300ms） -->
+        <item name="android:windowAnimationStyle">@style/Animation.Pest.Activity</item>
+    </style>
+
+    <style name="Theme.Pest" parent="Base.Theme.Pest" />
+
+    <!-- S01 拍照识别：相机场景，单独使用深色界面 -->
+    <style name="Theme.Pest.Camera" parent="Theme.Pest">
+        <item name="android:colorBackground">@color/pest_camera_background</item>
+        <item name="android:windowBackground">@color/pest_camera_background</item>
+        <item name="colorSurface">@color/pest_camera_background</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="colorOnSurfaceVariant">#C3C8BB</item>
+        <item name="colorControlNormal">@android:color/white</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="Animation.Pest.Activity" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/pest_slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/pest_slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/pest_slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/pest_slide_out_right</item>
+    </style>
+</resources>

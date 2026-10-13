@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 取景框左上角标：36 × 36dp，线宽 4dp，外侧圆角 16dp；其余三个角在布局中镜像 / 旋转 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <path
+        android:pathData="M2,36 L2,16 A14,14 0 0 1 16,2 L36,2"
+        android:strokeWidth="4"
+        android:strokeColor="@color/scan_on_dark" />
+</vector>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 模式胶囊：选中 #AAD291 底，未选透明底；背景过渡 150ms -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:enterFadeDuration="150"
+    android:exitFadeDuration="150">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/scan_accent" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+</selector>

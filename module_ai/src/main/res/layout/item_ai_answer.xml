@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q02 AI 回答：32dp 圆形头像 + surfaceContainerHigh 气泡（左上 4dp）。
+     气泡顶部为思考区：思考中「正在思考… 已用 N 秒」+ 默认展开的思考内容（左侧 2dp outlineVariant 竖线）；
+     正文开始后折叠为「已思考 N 秒」+ expand_more，可点开。其下为逐字输出的正文与末尾提示（回答中断等）；
+     已完成的回答下方显示复制 / 重新生成（重新生成只在最后一条回答下方） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/pest_bg_circle"
+        android:backgroundTint="?attr/colorPrimaryContainer"
+        android:contentDescription="@string/ai_avatar">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_auto_awesome_fill"
+            app:tint="?attr/colorOnPrimaryContainer" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/ai_answer_bubble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ai_bg_bubble_ai"
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="12dp">
+
+            <!-- 思考区标题行：折叠后可点击展开 / 收起（水波纹） -->
+            <LinearLayout
+                android:id="@+id/ai_answer_thinking"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="-6dp"
+                android:layout_marginTop="-4dp"
+                android:layout_marginEnd="-6dp"
+                android:layout_marginBottom="-4dp"
+                android:background="@drawable/ai_bg_thinking"
+                android:gravity="center_vertical"
+                android:minHeight="32dp"
+                android:orientation="horizontal"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/ai_answer_thinking_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_auto_awesome"
+                    app:tint="?attr/colorPrimary" />
+
+                <TextView
+                    android:id="@+id/ai_answer_thinking_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/ai_answer_thinking_elapsed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:maxLines="1"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/ai_answer_thinking_expand"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="2dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_expand_more"
+                    android:visibility="gone"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+            <!-- 思考内容：左侧 2dp outlineVariant 竖线，BodySmall onSurfaceVariant；高度动画时裁剪 -->
+            <LinearLayout
+                android:id="@+id/ai_answer_reasoning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="2dp"
+                    android:layout_height="match_parent"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <TextView
+                    android:id="@+id/ai_answer_reasoning_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/ai_answer_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fallbackLineSpacing="false"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/ai_answer_notice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/ai_answer_notice_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_error"
+                    app:tint="?attr/colorError" />
+
+                <TextView
+                    android:id="@+id/ai_answer_notice_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorError" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 操作栏：气泡下方 2dp，左移 6dp 与气泡文字对齐 -->
+        <LinearLayout
+            android:id="@+id/ai_answer_actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="-6dp"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/ai_answer_copy"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_copy"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_content_copy"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <ImageButton
+                android:id="@+id/ai_answer_regenerate"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_regenerate"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_refresh"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

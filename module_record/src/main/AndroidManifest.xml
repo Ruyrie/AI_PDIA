@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- R03 识别记录 / R04 空状态（模块07）。可带 RouterPath.EXTRA_MODE 预选筛选 -->
+        <activity
+            android:name=".ui.HistoryActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.HISTORY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

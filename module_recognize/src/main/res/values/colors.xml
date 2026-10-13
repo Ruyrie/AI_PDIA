@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    S01 拍照识别是全 App 唯一的深色相机页，配色单独以 scan_ 前缀定义，不影响全局浅色主题（模块05 UI 设计文档 2.2、2.3）。
+    其余页面只引用主题属性。
+-->
+<resources>
+    <!-- 取景区 / 操作区 -->
+    <color name="scan_viewfinder_bg">#1D211A</color>
+    <color name="scan_controls_bg">#000000</color>
+    <!-- 预览出现前的 eco 占位图标 -->
+    <color name="scan_placeholder_icon">#43483E</color>
+    <!-- 白色文字与图标 / 浅灰次要文字与图标 -->
+    <color name="scan_on_dark">#FFFFFF</color>
+    <color name="scan_on_dark_variant">#C3C8BB</color>
+    <!-- 提示胶囊：inverseSurface #2E312B 85% 不透明 -->
+    <color name="scan_hint_bg">#D92E312B</color>
+    <!-- 模式胶囊选中、权限按钮 -->
+    <color name="scan_accent">#AAD291</color>
+    <color name="scan_on_accent">#173807</color>
+    <!-- 相册 / 识别记录按钮底 -->
+    <color name="scan_button_bg">#32362F</color>
+    <!-- S02 扫描线与光晕 -->
+    <color name="scan_line">#AAD291</color>
+    <color name="scan_line_glow">#80AAD291</color>
+    <color name="scan_line_glow_edge">#00AAD291</color>
+</resources>

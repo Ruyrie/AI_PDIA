@@ -1,0 +1,28 @@
+// 所有 Android Library 组件（lib_* / module_*）共用的构建配置。
+// 用法：在组件 build.gradle 的 plugins 块之后 apply from: rootProject.file('gradle/pest-library.gradle')
+android {
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        minSdk 31
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        dataBinding true
+        viewBinding true
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 底部导航图标：选中实心（FILL 1），未选线框（FILL 0） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_person_fill" android:state_checked="true" />
+    <item android:drawable="@drawable/ic_person" />
+</selector>

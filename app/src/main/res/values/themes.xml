@@ -1,9 +1,5 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.AI_PDIA" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
-
-    <style name="Theme.AI_PDIA" parent="Base.Theme.AI_PDIA" />
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用主题：直接使用 lib_base 的 Theme.Pest（公共数据 · UI 设计规范） -->
+    <style name="Theme.PestAI" parent="Theme.Pest" />
 </resources>

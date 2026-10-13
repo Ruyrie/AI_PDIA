@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!-- A01 闪屏：整个 App 的启动入口 -->
+        <activity
+            android:name=".ui.splash.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Account.Starting">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.SPLASH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A02 引导页 -->
+        <activity
+            android:name=".ui.onboarding.OnboardingActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.ONBOARDING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A03 / A04 登录 -->
+        <activity
+            android:name=".ui.login.LoginActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.LOGIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A05 注册 -->
+        <activity
+            android:name=".ui.register.RegisterActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.REGISTER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A06 完善资料 -->
+        <activity
+            android:name=".ui.profile.ProfileSetupActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.PROFILE_SETUP" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A07 找回密码 · 验证手机 -->
+        <activity
+            android:name=".ui.forgot.ForgotPwdActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.FORGOT_PWD" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A08 设置新密码 -->
+        <activity
+            android:name=".ui.reset.ResetPwdActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.RESET_PWD" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A09 找回账号（RouterPath.RECOVER_ACCOUNT） -->
+        <activity
+            android:name=".ui.recover.RecoverAccountActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.RECOVER_ACCOUNT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A10 更换手机号（RouterPath.CHANGE_PHONE） -->
+        <activity
+            android:name=".ui.phone.ChangePhoneActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.CHANGE_PHONE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A11 注销账号（RouterPath.DEACTIVATE） -->
+        <activity
+            android:name=".ui.deactivate.DeactivateActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.DEACTIVATE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- A12 账号恢复码（RouterPath.RECOVERY_CODE） -->
+        <activity
+            android:name=".ui.recovery.RecoveryCodeActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.RECOVERY_CODE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

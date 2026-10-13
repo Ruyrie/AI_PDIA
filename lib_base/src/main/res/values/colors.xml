@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 公共数据 · UI 设计规范「三、颜色规范」。布局里只引用主题属性（?attr/colorPrimary 等），不要直接引用这些色值。 -->
+<resources>
+    <color name="pest_primary">#456732</color>
+    <color name="pest_on_primary">#FFFFFF</color>
+    <color name="pest_primary_container">#C5EFAB</color>
+    <color name="pest_on_primary_container">#2E4F1C</color>
+    <color name="pest_inverse_primary">#AAD291</color>
+
+    <color name="pest_secondary">#55624C</color>
+    <color name="pest_on_secondary">#FFFFFF</color>
+    <color name="pest_secondary_container">#D9E7CB</color>
+    <color name="pest_on_secondary_container">#3E4A35</color>
+
+    <color name="pest_tertiary">#386666</color>
+    <color name="pest_on_tertiary">#FFFFFF</color>
+    <color name="pest_tertiary_container">#BBEBEC</color>
+    <color name="pest_on_tertiary_container">#1E4E4E</color>
+
+    <color name="pest_warning">#745B00</color>
+    <color name="pest_warning_container">#FFE08B</color>
+    <color name="pest_on_warning_container">#241A00</color>
+
+    <color name="pest_error">#BA1A1A</color>
+    <color name="pest_on_error">#FFFFFF</color>
+    <color name="pest_error_container">#FFDAD6</color>
+    <color name="pest_on_error_container">#93000A</color>
+
+    <color name="pest_surface">#F8FAF0</color>
+    <color name="pest_on_surface">#191D16</color>
+    <color name="pest_surface_variant">#DFE4D7</color>
+    <color name="pest_on_surface_variant">#43483E</color>
+    <color name="pest_outline">#74796D</color>
+    <color name="pest_outline_variant">#C3C8BB</color>
+    <color name="pest_surface_container_lowest">#FFFFFF</color>
+    <color name="pest_surface_container_low">#F2F5EA</color>
+    <color name="pest_surface_container">#EDEFE4</color>
+    <color name="pest_surface_container_high">#E7E9DF</color>
+    <color name="pest_surface_container_highest">#E1E4D9</color>
+    <color name="pest_surface_dim">#D8DBD1</color>
+    <color name="pest_inverse_surface">#2E312B</color>
+    <color name="pest_inverse_on_surface">#EFF2E7</color>
+    <color name="pest_scrim">#52000000</color>
+
+    <!-- 相机页（S01）深色界面 -->
+    <color name="pest_camera_background">#1B1C18</color>
+    <color name="pest_camera_bar">#000000</color>
+</resources>

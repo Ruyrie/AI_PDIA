@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A02 单屏：280dp 圆形插图（中心 120dp 实心图标，左上 / 右下各一个浮动标签，向外偏移 24dp / 28dp），
+    插图下方 40dp 标题 28sp，标题下 12dp 说明 16sp（最大宽度 300dp）。内容贴底排布，说明文字距指示点 40dp；
+    屏幕较矮时插图圆按比例缩小。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="page"
+            type="com.heban.pestai.account.ui.onboarding.OnboardingPage" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <View
+            android:id="@+id/onboarding_circle"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="40dp"
+            android:background="@drawable/pest_bg_circle"
+            app:accountBackgroundTintAttr="@{page.bgAttr}"
+            app:layout_constraintBottom_toTopOf="@id/onboarding_title"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_max="@dimen/account_illustration_size"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1"
+            app:layout_constraintWidth_max="@dimen/account_illustration_size" />
+
+        <ImageView
+            android:id="@+id/onboarding_icon"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:importantForAccessibility="no"
+            app:accountSrc="@{page.icon}"
+            app:accountTintAttr="@{page.fgAttr}"
+            app:layout_constraintBottom_toBottomOf="@id/onboarding_circle"
+            app:layout_constraintEnd_toEndOf="@id/onboarding_circle"
+            app:layout_constraintStart_toStartOf="@id/onboarding_circle"
+            app:layout_constraintTop_toTopOf="@id/onboarding_circle"
+            tools:src="@drawable/ic_photo_camera_fill" />
+
+        <LinearLayout
+            android:id="@+id/onboarding_chip_a"
+            style="@style/Widget.Account.FloatChip"
+            android:layout_width="wrap_content"
+            android:translationX="-24dp"
+            android:translationY="32dp"
+            app:layout_constraintStart_toStartOf="@id/onboarding_circle"
+            app:layout_constraintTop_toTopOf="@id/onboarding_circle">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                app:accountSrc="@{page.chipAIcon}"
+                app:tint="?attr/colorPrimary"
+                tools:src="@drawable/ic_center_focus_weak" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:maxLines="1"
+                android:text="@{page.chipAText}"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="@string/account_onboarding_chip_1a" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/onboarding_chip_b"
+            style="@style/Widget.Account.FloatChip"
+            android:layout_width="wrap_content"
+            android:translationX="28dp"
+            android:translationY="-38dp"
+            app:layout_constraintBottom_toBottomOf="@id/onboarding_circle"
+            app:layout_constraintEnd_toEndOf="@id/onboarding_circle">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                app:accountSrc="@{page.chipBIcon}"
+                app:tint="?attr/colorTertiary"
+                tools:src="@drawable/ic_bolt" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:maxLines="1"
+                android:text="@{page.chipBText}"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="@string/account_onboarding_chip_1b" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/onboarding_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            android:text="@{page.title}"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+            app:layout_constraintBottom_toTopOf="@id/onboarding_body"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="@string/account_onboarding_title_1" />
+
+        <TextView
+            android:id="@+id/onboarding_body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:maxWidth="300dp"
+            android:text="@{page.body}"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:text="@string/account_onboarding_body_1" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AiFileProvider 可共享的目录：Q01 拍照时系统相机写入的缓存文件（cacheDir/ai_camera/） -->
+<paths>
+    <cache-path
+        name="ai_camera"
+        path="ai_camera/" />
+</paths>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- lib_base 公共文案（pest_ 前缀）。业务文案放在各业务组件中，按组件加前缀。 -->
+<resources>
+    <string name="pest_back">返回</string>
+    <string name="pest_retry">重试</string>
+    <string name="pest_cancel">取消</string>
+    <string name="pest_confirm">确定</string>
+    <string name="pest_undo">撤销</string>
+    <string name="pest_loading">加载中…</string>
+    <string name="pest_load_failed">加载失败</string>
+    <string name="pest_network_error">网络连接失败，请检查网络后重试</string>
+</resources>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.RecognitionMapper">
+
+    <!-- RecordItemVO 需要的 9 列 -->
+    <sql id="itemColumns">
+        id, `mode`, image_url, `status`, top_name, confidence, severity, fail_reason, created_at
+    </sql>
+
+    <!-- RecognitionVO 需要的列（不读 user_id、deleted、updated_at） -->
+    <sql id="detailColumns">
+        id, `mode`, image_url, `status`, top_name, confidence, severity, fail_reason, created_at,
+        category, part, spread_fast, evidence, urgency_days, others_json, model_name
+    </sql>
+
+    <insert id="insert" parameterType="com.heban.pestai.server.entity.Recognition"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_recognition (user_id, `mode`, image_url, `status`, top_name, confidence, severity,
+                                   category, part, spread_fast, evidence, urgency_days, others_json,
+                                   fail_reason, model_name, deleted, created_at, updated_at)
+        VALUES (#{userId}, #{mode}, #{imageUrl}, #{status}, #{topName}, #{confidence}, #{severity},
+                #{category}, #{part}, #{spreadFast}, #{evidence}, #{urgencyDays}, #{othersJson},
+                #{failReason}, #{modelName}, 0, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <!-- idx_user_deleted_created：前两列等值、第三列有序，倒序扫描取满 size 行即停止 -->
+    <select id="selectRecent" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT <include refid="itemColumns"/>
+        FROM t_recognition
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{size}
+    </select>
+
+    <sql id="pageWhere">
+        WHERE user_id = #{userId} AND deleted = 0
+        <if test="mode != null and mode != ''">AND `mode` = #{mode}</if>
+    </sql>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*)
+        FROM t_recognition
+        <include refid="pageWhere"/>
+    </select>
+
+    <!-- 带 mode 时走 idx_user_deleted_mode_created，不带时走 idx_user_deleted_created -->
+    <select id="selectPageByUser" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT <include refid="itemColumns"/>
+        FROM t_recognition
+        <include refid="pageWhere"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectByIdAndUser" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT <include refid="detailColumns"/>
+        FROM t_recognition
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </select>
+
+    <select id="selectOwnerById" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT id, user_id, `status`, top_name, deleted
+        FROM t_recognition
+        WHERE id = #{id}
+    </select>
+
+    <update id="logicDelete">
+        UPDATE t_recognition
+        SET deleted = 1, updated_at = #{now}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="updateResult" parameterType="com.heban.pestai.server.entity.Recognition">
+        UPDATE t_recognition
+        SET `status` = 'SUCCESS',
+            top_name = #{topName},
+            confidence = #{confidence},
+            severity = #{severity},
+            category = #{category},
+            part = #{part},
+            spread_fast = #{spreadFast},
+            evidence = #{evidence},
+            urgency_days = #{urgencyDays},
+            others_json = #{othersJson},
+            model_name = #{modelName},
+            fail_reason = NULL,
+            updated_at = #{updatedAt}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="updateFailure">
+        UPDATE t_recognition
+        SET `status` = #{status},
+            fail_reason = #{failReason},
+            updated_at = #{now}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <select id="selectStatCounts" resultType="com.heban.pestai.server.entity.RecognitionStats">
+        SELECT COUNT(*) AS total,
+               COUNT(DISTINCT CASE
+                       WHEN `mode` = 'PEST' AND `status` = 'SUCCESS'
+                            AND severity IS NOT NULL AND severity &lt;&gt; '健康'
+                       THEN top_name END) AS pest_kinds,
+               COALESCE(SUM(CASE
+                       WHEN created_at &gt;= #{monthStart} AND created_at &lt; #{nextMonthStart}
+                       THEN 1 ELSE 0 END), 0) AS month_count
+        FROM t_recognition
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <!-- 注销账号：不带 deleted 条件，已逻辑删除的记录同样清理 -->
+    <select id="selectAllImageUrlsByUser" resultType="java.lang.String">
+        SELECT DISTINCT image_url
+        FROM t_recognition
+        WHERE user_id = #{userId} AND image_url IS NOT NULL AND image_url &lt;&gt; ''
+    </select>
+
+    <delete id="deleteAllByUser">
+        DELETE FROM t_recognition WHERE user_id = #{userId}
+    </delete>
+</mapper>

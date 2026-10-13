@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q01 AI 问答 · 新对话（MainActivity 第 2 个 Tab；状态栏间距与软键盘由 MainActivity 统一处理） -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.ai.AskAiViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/ask_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <!-- 顶部栏 64dp -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:maxLines="1"
+                android:text="@string/ai_title"
+                android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:background="@drawable/ai_bg_disclaimer"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/ai_disclaimer"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <!-- 历史对话（Q03）；游客弹「登录后才能使用」 -->
+            <ImageButton
+                android:id="@+id/ask_history"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_history"
+                android:src="@drawable/ic_history"
+                app:onSafeClick="@{() -> vm.onHistoryClick()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <!-- 内容区 -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/ask_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="16dp">
+
+                <!-- 欢迎区 -->
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/ai_bg_welcome_icon">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_auto_awesome_fill"
+                        app:tint="?attr/colorOnPrimaryContainer" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="@string/ai_welcome_title"
+                    android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:maxWidth="320dp"
+                    android:text="@string/ai_welcome_desc"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <!-- 能力卡片：横向三等分；点击直达（文字提问 / 带图提问 / 追问结果），水波纹 + 按下缩放 0.96 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/ask_card_text"
+                        style="@style/Widget.Pest.Card"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:onSafeClick="@{() -> vm.onTextCardClick()}">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/ai_bg_icon_block"
+                                android:backgroundTint="?attr/colorSecondaryContainer">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_edit_note"
+                                    app:tint="?attr/colorOnSecondaryContainer" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_text_title"
+                                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_text_desc"
+                                android:textAppearance="?attr/textAppearanceBodySmall" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/ask_card_image"
+                        style="@style/Widget.Pest.Card"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:onSafeClick="@{() -> vm.onImageCardClick()}">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/ai_bg_icon_block"
+                                android:backgroundTint="?attr/colorTertiaryContainer">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_add_photo_alternate"
+                                    app:tint="?attr/colorOnTertiaryContainer" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_image_title"
+                                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_image_desc"
+                                android:textAppearance="?attr/textAppearanceBodySmall" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/ask_card_follow"
+                        style="@style/Widget.Pest.Card"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:onSafeClick="@{() -> vm.onFollowCardClick()}">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/ai_bg_icon_block"
+                                android:backgroundTint="?attr/colorWarningContainer">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_center_focus_weak"
+                                    app:tint="?attr/colorOnWarningContainer" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_follow_title"
+                                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/ai_cap_follow_desc"
+                                android:textAppearance="?attr/textAppearanceBodySmall" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- 最近识别卡：没有成功的识别记录或游客时隐藏 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/ask_latest_card"
+                    style="@style/Widget.Pest.Card.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:onSafeClick="@{() -> vm.continueAsk()}"
+                    app:visible="@{vm.latestRecord != null}">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:id="@+id/ask_latest_thumb"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/ai_bg_thumb_12"
+                            android:clipToOutline="true"
+                            android:contentDescription="@string/ai_latest_thumb"
+                            android:scaleType="centerCrop"
+                            app:imageCornerRadius="@{12}"
+                            app:imageUrl="@{vm.latestRecord.imageUrl}" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/ask_latest_label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@{vm.latestLabel}"
+                                android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                            <TextView
+                                android:id="@+id/ask_latest_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@{vm.latestTitle}"
+                                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/ask_continue"
+                            style="@style/Widget.Pest.Button.Tonal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="12dp"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:paddingStart="12dp"
+                            android:paddingTop="0dp"
+                            android:paddingEnd="12dp"
+                            android:paddingBottom="0dp"
+                            android:text="@string/ai_continue_ask"
+                            app:onSafeClick="@{() -> vm.continueAsk()}" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 大家常问：加载中显示 3 条占位条；空列表时隐藏整个区域 -->
+                <LinearLayout
+                    android:id="@+id/ask_suggestion_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical"
+                    app:visible="@{vm.suggestionState != UiState.EMPTY}">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:accessibilityHeading="true"
+                        android:text="@string/ai_suggestions_title"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
+                        android:id="@+id/ask_suggestion_skeleton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        app:visible="@{vm.suggestionState == UiState.LOADING}">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:background="@drawable/ai_bg_skeleton" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/ai_bg_skeleton" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/ai_bg_skeleton" />
+                    </LinearLayout>
+
+                    <!-- 行由 AskAiFragment 用 item_ai_suggestion 填充 -->
+                    <LinearLayout
+                        android:id="@+id/ask_suggestion_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical"
+                        app:visible="@{vm.suggestionState == UiState.SUCCESS}" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- 待发送图片：56dp 缩略图 + 右上角 20dp 关闭按钮 -->
+        <FrameLayout
+            android:id="@+id/ask_pending"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            app:visible="@{vm.pendingImage != null}">
+
+            <ImageView
+                android:id="@+id/ask_pending_image"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/ai_bg_thumb_12"
+                android:clipToOutline="true"
+                android:contentDescription="@string/ai_pending_image"
+                android:scaleType="centerCrop"
+                app:imageCornerRadius="@{12}"
+                app:imageUrl="@{vm.pendingImage}" />
+
+            <ImageButton
+                android:id="@+id/ask_pending_remove"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/pest_bg_circle"
+                android:backgroundTint="?attr/colorSurfaceInverse"
+                android:contentDescription="@string/ai_remove_image"
+                android:padding="3dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_close"
+                app:onSafeClick="@{() -> vm.clearPendingImage()}"
+                app:tint="?attr/colorOnSurfaceInverse" />
+        </FrameLayout>
+
+        <!-- 提问模板：「文字提问」后出现的一行可横向滑动的 Chip；发送、清空输入或收起键盘后隐藏 -->
+        <HorizontalScrollView
+            android:id="@+id/ask_templates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:scrollbars="none"
+            app:visible="@{safeUnbox(vm.templatesVisible)}">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/ask_template_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="8dp"
+                app:singleLine="true" />
+        </HorizontalScrollView>
+
+        <!-- 底部输入栏：图片按钮 / 输入胶囊 / 发送 -->
+        <LinearLayout
+            android:id="@+id/ask_input_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="12dp">
+
+            <ImageButton
+                android:id="@+id/ask_pick_image"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_pick_image"
+                android:src="@drawable/ic_add_photo_alternate"
+                app:onSafeClick="@{() -> vm.onPickImageClick()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <EditText
+                android:id="@+id/ask_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/ai_bg_input"
+                android:hint="@{vm.pendingImage != null ? @string/ai_input_hint_image : @string/ai_input_hint}"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="4"
+                android:minHeight="48dp"
+                android:paddingStart="20dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="12dp"
+                android:text="@={vm.inputText}"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+            <ImageButton
+                android:id="@+id/ask_send"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/ai_bg_send"
+                android:contentDescription="@string/ai_send"
+                android:enabled="@{safeUnbox(vm.canSend)}"
+                android:src="@drawable/ic_arrow_upward"
+                app:onSafeClick="@{() -> vm.send()}"
+                app:tint="@color/ai_send_icon" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

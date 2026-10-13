@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q01「追问结果」底部面板（BottomSheet 顶部圆角 28dp）：标题「选择要追问的识别记录」+ 最近识别成功的记录；
+     加载中显示圆形进度；没有记录显示「还没有识别记录」+「去拍照识别」；加载失败显示「加载失败」+「重试」 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.ai.AskAiViewModel" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="8dp"
+            android:text="@string/ai_picker_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="200dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/ai_picker_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"
+                app:visible="@{vm.recordChoiceState == UiState.SUCCESS}" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:contentDescription="@string/pest_loading"
+                android:indeterminate="true"
+                app:indicatorColor="?attr/colorPrimary"
+                app:visible="@{vm.recordChoiceState == UiState.LOADING}" />
+
+            <!-- 没有识别记录 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="32dp"
+                app:visible="@{vm.recordChoiceState == UiState.EMPTY}">
+
+                <ImageView
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:background="@drawable/pest_bg_circle"
+                    android:backgroundTint="?attr/colorSurfaceContainerHigh"
+                    android:importantForAccessibility="no"
+                    android:padding="24dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_image_search"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/ai_picker_empty"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_picker_scan"
+                    style="@style/Widget.Pest.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="16dp"
+                    android:paddingEnd="24dp"
+                    android:text="@string/ai_picker_go_scan"
+                    app:icon="@drawable/ic_photo_camera"
+                    app:iconPadding="8dp"
+                    app:iconSize="18dp" />
+            </LinearLayout>
+
+            <!-- 加载失败 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="32dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="32dp"
+                app:visible="@{vm.recordChoiceState == UiState.ERROR}">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pest_load_failed"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_picker_retry"
+                    style="@style/Widget.Pest.Button.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/pest_retry" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</layout>

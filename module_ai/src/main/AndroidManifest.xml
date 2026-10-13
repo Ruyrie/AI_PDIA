@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Q01「带图提问 → 拍照」启动系统相机前需要已授权（合并清单中声明了 CAMERA 时系统相机会校验）；
+         没有摄像头的设备也能安装，可从相册选择 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <application>
+        <!-- Q02 AI 对话（追问识别结果 / 新对话 / 历史对话）。软键盘由页面根布局的 ime inset 处理 -->
+        <activity
+            android:name=".chat.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.AI_CHAT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Q03 历史对话：只在 module_ai 内部用显式 Intent 打开 -->
+        <activity
+            android:name=".history.ChatHistoryActivity"
+            android:exported="false" />
+
+        <!-- Q01 拍照：系统相机把照片写入 cacheDir/ai_camera/（authority 带 .ai 前缀，避免与其他组件冲突） -->
+        <provider
+            android:name=".util.AiFileProvider"
+            android:authorities="${applicationId}.ai.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/ai_file_paths" />
+        </provider>
+    </application>
+
+</manifest>

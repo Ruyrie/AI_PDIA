@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「清理」文字按钮：primary 色，缓存为 0 B 等不可点时 38% 不透明度 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.38" android:color="?attr/colorPrimary" android:state_enabled="false" />
+    <item android:color="?attr/colorPrimary" />
+</selector>

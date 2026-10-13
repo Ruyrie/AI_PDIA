@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_account 文案（account_ 前缀），取自模块01–03 UI 设计文档与原型 -->
+<resources>
+    <!-- 通用 -->
+    <string name="account_app_name">病虫害识别助手</string>
+    <string name="account_logo_desc">应用 Logo</string>
+    <string name="account_phone">手机号</string>
+    <string name="account_phone_prefix">+86</string>
+    <string name="account_code">验证码</string>
+    <string name="account_code_placeholder">6 位数字</string>
+    <string name="account_get_code">获取验证码</string>
+    <string name="account_password">密码</string>
+    <string name="account_agreement_prefix">我已阅读并同意</string>
+    <string name="account_agreement_user">《用户协议》</string>
+    <string name="account_agreement_and">和</string>
+    <string name="account_agreement_privacy">《隐私政策》</string>
+    <string name="account_agreement_required">请先阅读并勾选同意协议</string>
+    <string name="account_session_expired">登录已过期，请重新登录</string>
+    <string name="account_next">下一步</string>
+    <string name="account_skip">跳过</string>
+    <string name="account_start_use">开始使用</string>
+    <string name="account_strength_bar_desc">密码强度</string>
+
+    <!-- A01 闪屏 -->
+    <string name="account_splash_slogan">拍一拍，看懂作物的病与虫</string>
+
+    <!-- A02 引导页 -->
+    <string name="account_onboarding_title_1">拍一拍就能识别</string>
+    <string name="account_onboarding_body_1">对准发病的叶片、果实或虫体拍照，AI 几秒内给出诊断</string>
+    <string name="account_onboarding_chip_1a">对准病斑</string>
+    <string name="account_onboarding_chip_1b">几秒出结果</string>
+    <string name="account_onboarding_title_2">看懂识别结果</string>
+    <string name="account_onboarding_body_2">匹配度、严重程度、识别依据一目了然，还能看到其他可能</string>
+    <string name="account_onboarding_chip_2a">黄瓜霜霉病 · 92%</string>
+    <string name="account_onboarding_chip_2b">中度 · 3 天内处理</string>
+    <string name="account_onboarding_title_3">不懂就问 AI</string>
+    <string name="account_onboarding_body_3">文字、图片都能问，还能接着识别结果继续追问</string>
+    <string name="account_onboarding_chip_3a">这个病怎么处理？</string>
+    <string name="account_onboarding_chip_3b">带图提问</string>
+    <string name="account_has_account">已有账号？</string>
+    <string name="account_login">登录</string>
+
+    <!-- A03 / A04 登录 -->
+    <string name="account_guest">游客浏览</string>
+    <string name="account_login_title_password">欢迎回来</string>
+    <string name="account_login_desc_password">登录后保存你的识别记录和 AI 对话</string>
+    <string name="account_login_title_sms">验证码登录</string>
+    <string name="account_login_desc_sms">未注册的手机号验证后将自动创建账号</string>
+    <string name="account_tab_password">密码登录</string>
+    <string name="account_tab_sms">验证码登录</string>
+    <string name="account_forgot_password">忘记密码？</string>
+    <string name="account_login_button">登录</string>
+    <string name="account_login_sms_button">登录 / 注册</string>
+    <string name="account_no_account">还没有账号？</string>
+    <string name="account_register_now">立即注册</string>
+    <string name="account_no_code_title">收不到验证码？</string>
+    <string name="account_no_code_desc">"请确认号码正确、短信未被拦截；也可以改用 "</string>
+
+    <!-- A05 注册 -->
+    <string name="account_register_title">注册账号</string>
+    <string name="account_step_1_of_2">第 1 步，共 2 步</string>
+    <string name="account_register_desc">验证手机号并设置登录密码</string>
+    <string name="account_set_password">设置密码</string>
+    <string name="account_confirm_password">确认密码</string>
+    <string name="account_rule_length">8–20 位</string>
+    <string name="account_rule_letter">包含字母</string>
+    <string name="account_rule_digit">包含数字</string>
+    <string name="account_go_login">去登录</string>
+
+    <!-- A06 完善资料 -->
+    <string name="account_profile_title">完善资料</string>
+    <string name="account_step_2_of_2">第 2 步，共 2 步</string>
+    <string name="account_profile_desc">告诉我们你种什么，识别和 AI 回答会更准</string>
+    <string name="account_avatar_desc">更换头像</string>
+    <string name="account_nickname">昵称</string>
+    <string name="account_identity">种植身份</string>
+
+    <!-- A07 找回密码 -->
+    <string name="account_forgot_title">找回密码</string>
+    <string name="account_change_password_title">修改密码</string>
+    <string name="account_step_verify_phone">验证手机</string>
+    <string name="account_step_set_password">设置新密码</string>
+    <string name="account_forgot_desc">输入注册时使用的手机号，我们会发送 6 位验证码。</string>
+    <string name="account_change_password_desc">我们会向当前账号绑定的手机号发送 6 位验证码。</string>
+    <string name="account_recover_banner">手机号已停用、收不到验证码？</string>
+    <string name="account_recover_banner_action">找回账号</string>
+
+    <!-- A08 设置新密码 -->
+    <string name="account_reset_title">设置新密码</string>
+    <string name="account_new_password">新密码</string>
+    <string name="account_confirm_new_password">确认新密码</string>
+    <string name="account_rule_mix">同时包含字母和数字</string>
+    <string name="account_rule_recent">与最近使用过的密码不同</string>
+    <string name="account_done">完成</string>
+    <string name="account_reset_success_title">密码已重置</string>
+    <string name="account_reset_success_desc">其他设备上的登录已失效，请使用新密码重新登录。</string>
+    <string name="account_toggle_password_desc">显示或隐藏密码</string>
+
+    <!-- A09 找回账号 -->
+    <string name="account_recover_title">找回账号</string>
+    <string name="account_step_verify_identity">验证身份</string>
+    <string name="account_step_verify_new_phone">验证新手机号</string>
+    <string name="account_recover_desc_1">原手机号已停用时，可以用登录密码或账号恢复码验证身份，把账号换绑到新手机号。</string>
+    <string name="account_old_phone">原手机号</string>
+    <string name="account_old_phone_placeholder">账号原来绑定的手机号</string>
+    <string name="account_recover_method">验证方式</string>
+    <string name="account_recover_method_password">登录密码</string>
+    <string name="account_recover_method_code">恢复码</string>
+    <string name="account_recover_password">登录密码</string>
+    <string name="account_recover_password_placeholder">这个账号的登录密码</string>
+    <string name="account_recovery_code">恢复码</string>
+    <string name="account_recovery_code_placeholder">ABCD-EFGH-JKLM</string>
+    <string name="account_recover_forgot_both">密码和恢复码都忘了？</string>
+    <string name="account_recover_desc_2">验证新手机号后，账号立即换绑到新手机号，其他设备上的登录将失效。</string>
+    <string name="account_recover_desc_2_code">验证新手机号并设置新密码后，账号立即换绑到新手机号，其他设备上的登录将失效。</string>
+    <string name="account_new_phone">新手机号</string>
+    <string name="account_new_phone_placeholder">请输入 11 位手机号</string>
+    <string name="account_set_new_password">设置新密码</string>
+    <string name="account_recover_submit">完成换绑</string>
+    <string name="account_recover_success_title">账号已换绑</string>
+    <string name="account_recover_code_used">恢复码已使用并失效，请在『我的 → 设置 → 账号恢复码』重新生成</string>
+    <string name="account_go_home">进入首页</string>
+    <string name="account_unverifiable_title">无法验证身份</string>
+    <string name="account_unverifiable_desc">为保护账号安全，不能通过密码或恢复码验证身份时，无法找回账号。</string>
+    <string name="account_unverifiable_tip_phone">如果其他手机上还登录着这个账号，可以在『我的 → 设置 → 手机号』直接更换手机号</string>
+    <string name="account_unverifiable_tip_register">也可以用新手机号注册一个新账号</string>
+    <string name="account_register_with_new_phone">用新手机号注册</string>
+    <string name="account_back_to_login">返回登录</string>
+
+    <!-- A10 更换手机号 -->
+    <string name="account_change_phone_title">更换手机号</string>
+    <string name="account_current_phone">当前手机号</string>
+    <string name="account_change_phone_desc">更换后请使用新手机号登录，原手机号将不再关联此账号。</string>
+    <string name="account_change_phone_submit">确认更换</string>
+    <string name="account_change_phone_success_title">手机号已更换</string>
+
+    <!-- A11 注销账号 -->
+    <string name="account_deactivate_title">注销账号</string>
+    <string name="account_deactivate_warning_title">注销后，以下内容将被永久删除且无法恢复</string>
+    <string name="account_deactivate_item_profile">账号资料（昵称、头像、地区、种植信息）</string>
+    <string name="account_deactivate_item_records">全部识别记录与识别照片</string>
+    <string name="account_deactivate_item_chats">全部 AI 问答记录</string>
+    <string name="account_deactivate_reregister">注销后可以用该手机号重新注册，但会是一个全新的账号。</string>
+    <string name="account_deactivate_verify">验证当前手机号</string>
+    <string name="account_deactivate_agree">我已了解注销后果，数据无法恢复</string>
+    <string name="account_deactivate_submit">注销账号</string>
+    <string name="account_deactivate_confirm_title">确定注销账号？</string>
+    <string name="account_deactivate_confirm_message">此操作不可撤销，账号与全部数据将被立即删除。</string>
+    <string name="account_deactivate_confirm">确定注销</string>
+    <string name="account_deactivated">账号已注销</string>
+
+    <!-- A12 账号恢复码 -->
+    <string name="account_recovery_title">账号恢复码</string>
+    <string name="account_recovery_info_title">手机号停用又忘记密码时，可以用恢复码找回账号。</string>
+    <string name="account_recovery_info_once">恢复码只显示一次，请抄在纸上或截图保存</string>
+    <string name="account_recovery_info_secret">不要发给任何人</string>
+    <string name="account_recovery_info_regenerate">重新生成后旧恢复码立即失效</string>
+    <string name="account_recovery_info_used">用来找回账号后恢复码失效，需要重新生成</string>
+    <string name="account_recovery_generate">生成恢复码</string>
+    <string name="account_recovery_regenerate">重新生成恢复码</string>
+    <string name="account_recovery_regenerate_confirm_title">重新生成恢复码？</string>
+    <string name="account_recovery_regenerate_confirm_message">重新生成后，旧恢复码将立即失效</string>
+    <string name="account_recovery_regenerate_confirm">重新生成</string>
+    <string name="account_recovery_result_label">你的账号恢复码</string>
+    <string name="account_recovery_copy">复制</string>
+    <string name="account_recovery_result_hint">离开本页后无法再次查看，请现在抄写或截图保存</string>
+    <string name="account_recovery_saved">我已抄写或截图保存</string>
+    <string name="account_recovery_leave_message">恢复码只显示这一次，确定已保存？</string>
+    <string name="account_recovery_leave_stay">返回查看</string>
+    <string name="account_recovery_leave_confirm">确定离开</string>
+    <string name="account_recovery_clip_label">账号恢复码</string>
+    <string name="account_recovery_verified_recently">你刚刚已通过短信验证，可以直接生成</string>
+    <string name="account_recovery_retry">重试</string>
+    <!-- A12 引导模式（新用户完善资料之后） -->
+    <string name="account_recovery_guide_title">保存账号恢复码</string>
+    <string name="account_recovery_guide_desc">账号已创建。建议现在保存账号恢复码：手机号停用又忘记密码时，可以用它找回账号。</string>
+    <string name="account_recovery_later">稍后再说</string>
+</resources>

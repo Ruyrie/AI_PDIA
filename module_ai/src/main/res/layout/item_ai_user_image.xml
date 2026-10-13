@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q02 用户图片消息：168 × 112dp，圆角 16dp。加载前显示 image 图标 +「照片」；
+     上传中 32% 遮罩 + 白色圆形进度；上传失败显示 error 图标，点按重新上传并提问 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="48dp">
+
+    <FrameLayout
+        android:id="@+id/ai_image_frame"
+        android:layout_width="168dp"
+        android:layout_height="112dp"
+        android:layout_gravity="end"
+        android:background="@drawable/ai_bg_image_placeholder"
+        android:clipToOutline="true"
+        android:contentDescription="@string/ai_photo">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:importantForAccessibility="no"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_image"
+                app:tint="?attr/colorOutline" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/ai_photo"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOutline" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ai_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <FrameLayout
+            android:id="@+id/ai_image_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/ai_bg_image_scrim"
+            android:visibility="gone">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/ai_image_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                app:indicatorColor="?attr/colorOnPrimary"
+                app:indicatorSize="24dp"
+                app:trackColor="@android:color/transparent"
+                app:trackThickness="3dp" />
+
+            <ImageView
+                android:id="@+id/ai_image_failed"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/ai_image_retry"
+                android:src="@drawable/ic_error_fill"
+                android:visibility="gone"
+                app:tint="?attr/colorOnPrimary" />
+        </FrameLayout>
+    </FrameLayout>
+</FrameLayout>

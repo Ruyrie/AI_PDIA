@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- H01 首页（模块04 UI 设计文档 2.2）。状态栏间距由 MainActivity 统一处理，这里不再添加。 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <import type="com.heban.pestai.common.MainViewModel" />
+
+        <import type="com.heban.pestai.common.router.RouterPath" />
+
+        <import type="com.heban.pestai.home.util.GreetingHelper" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.home.HomeViewModel" />
+
+        <variable
+            name="main"
+            type="com.heban.pestai.common.MainViewModel" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <!-- ========== 问候栏（72dp，固定） ========== -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/home_header"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:id="@+id/home_date"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{vm.dateText}"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                app:layout_constraintBottom_toTopOf="@id/home_greeting"
+                app:layout_constraintEnd_toStartOf="@id/home_history"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed"
+                tools:text="10月10日 周六" />
+
+            <TextView
+                android:id="@+id/home_greeting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{vm.greeting}"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/home_history"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/home_date"
+                tools:text="下午好，老李" />
+
+            <ImageButton
+                android:id="@+id/home_history"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/home_history_desc"
+                android:onClick="@{() -> vm.onHistoryClick()}"
+                android:src="@drawable/ic_history"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/home_avatar_button"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <!-- 头像：48dp 触控区内 32dp 圆形；游客显示 person 图标；点击切换到「我的」Tab -->
+            <FrameLayout
+                android:id="@+id/home_avatar_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/home_avatar_desc"
+                android:onClick="@{() -> main.selectTab(MainViewModel.TAB_MINE)}"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.heban.pestai.base.widget.AvatarView
+                    android:id="@+id/home_avatar"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    app:avatarImage="@{vm.user.avatarUrl}"
+                    app:avatarName="@{GreetingHelper.avatarText(vm.user.nickname)}"
+                    app:avatarTextSize="14sp"
+                    app:visible="@{!safeUnbox(vm.guest)}" />
+
+                <ImageView
+                    android:id="@+id/home_avatar_guest"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/pest_bg_circle"
+                    android:backgroundTint="?attr/colorSurfaceContainerHighest"
+                    android:importantForAccessibility="no"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_person"
+                    android:visibility="gone"
+                    app:tint="?attr/colorOnSurfaceVariant"
+                    app:visible="@{safeUnbox(vm.guest)}" />
+            </FrameLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- ========== 内容区：下拉刷新 + 纵向滚动 ========== -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/home_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            app:onRefreshListener="@{() -> vm.onPullRefresh()}"
+            app:refreshing="@{safeUnbox(vm.refreshing)}">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/home_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/pest_page_margin"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="@dimen/pest_page_margin"
+                    android:paddingBottom="16dp">
+
+                    <!-- ========== 拍照识别卡 ========== -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/home_scan_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                        app:cardCornerRadius="28dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/home_scan_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/home_scan_title"
+                                        android:textAppearance="@style/TextAppearance.Pest.TitleLarge.Medium"
+                                        android:textColor="?attr/colorOnPrimaryContainer" />
+
+                                    <TextView
+                                        android:id="@+id/home_scan_desc"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="6dp"
+                                        android:text="@string/home_scan_desc"
+                                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                                        android:textColor="?attr/colorOnPrimaryContainer" />
+                                </LinearLayout>
+
+                                <FrameLayout
+                                    android:layout_width="64dp"
+                                    android:layout_height="64dp"
+                                    android:layout_marginStart="16dp"
+                                    android:background="@drawable/home_bg_scan_icon">
+
+                                    <ImageView
+                                        android:layout_width="36dp"
+                                        android:layout_height="36dp"
+                                        android:layout_gravity="center"
+                                        android:importantForAccessibility="no"
+                                        android:src="@drawable/home_ic_center_focus_weak_fill"
+                                        app:tint="?attr/colorOnPrimary" />
+                                </FrameLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/home_scan_camera"
+                                    style="@style/Widget.Pest.Button.Medium"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:onClick="@{() -> vm.onScanClick()}"
+                                    android:paddingStart="12dp"
+                                    android:paddingEnd="12dp"
+                                    android:text="@string/home_scan_camera"
+                                    app:icon="@drawable/ic_photo_camera"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="8dp"
+                                    app:iconSize="20dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/home_scan_album"
+                                    style="@style/Widget.Pest.Button.Medium"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:onClick="@{() -> vm.onAlbumClick()}"
+                                    android:paddingStart="12dp"
+                                    android:paddingEnd="12dp"
+                                    android:text="@string/home_scan_album"
+                                    android:textColor="?attr/colorOnPrimaryContainer"
+                                    app:backgroundTint="?attr/colorSurface"
+                                    app:icon="@drawable/ic_photo_library"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="8dp"
+                                    app:iconSize="20dp"
+                                    app:iconTint="?attr/colorOnPrimaryContainer"
+                                    app:rippleColor="@color/home_ripple_on_primary_container" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- ========== 识别模式 ========== -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/home_mode_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/home_mode_pest"
+                            android:layout_width="0dp"
+                            android:layout_height="72dp"
+                            android:layout_weight="1"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:onClick="@{() -> vm.onModeClick(RouterPath.MODE_PEST)}">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <FrameLayout
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:background="@drawable/home_bg_mode_icon"
+                                    android:backgroundTint="?attr/colorErrorContainer">
+
+                                    <ImageView
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
+                                        android:layout_gravity="center"
+                                        android:importantForAccessibility="no"
+                                        android:src="@drawable/ic_bug_report_fill"
+                                        app:tint="?attr/colorOnErrorContainer" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/home_mode_pest"
+                                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/home_mode_pest_desc"
+                                        android:textAppearance="?attr/textAppearanceBodySmall" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/home_mode_crop"
+                            android:layout_width="0dp"
+                            android:layout_height="72dp"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:onClick="@{() -> vm.onModeClick(RouterPath.MODE_CROP)}">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <FrameLayout
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:background="@drawable/home_bg_mode_icon"
+                                    android:backgroundTint="?attr/colorSecondaryContainer">
+
+                                    <ImageView
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
+                                        android:layout_gravity="center"
+                                        android:importantForAccessibility="no"
+                                        android:src="@drawable/ic_grass_fill"
+                                        app:tint="?attr/colorOnSecondaryContainer" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/home_mode_crop"
+                                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/home_mode_crop_desc"
+                                        android:textAppearance="?attr/textAppearanceBodySmall" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <!-- ========== AI 入口卡：切换到「AI 问答」Tab ========== -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/home_ai_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="72dp"
+                        android:layout_marginTop="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:onClick="@{() -> main.selectTab(MainViewModel.TAB_AI)}"
+                        app:cardBackgroundColor="?attr/colorTertiaryContainer">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="12dp">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_auto_awesome_fill"
+                                app:tint="?attr/colorOnTertiaryContainer" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:text="@string/home_ai_title"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnTertiaryContainer" />
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:text="@string/home_ai_desc"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnTertiaryContainer" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="16dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_chevron_right"
+                                app:tint="?attr/colorOnTertiaryContainer" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- ========== 最近识别标题行（40dp） ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/home_recent_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/home_recent_all"
+                            style="@style/Widget.Pest.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:minWidth="0dp"
+                            android:minHeight="40dp"
+                            android:onClick="@{() -> vm.onHistoryClick()}"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="8dp"
+                            android:text="@string/home_recent_all"
+                            android:visibility="gone"
+                            app:icon="@drawable/ic_chevron_right"
+                            app:iconGravity="textEnd"
+                            app:iconPadding="2dp"
+                            app:iconSize="18dp"
+                            app:visible="@{safeUnbox(vm.showAll)}" />
+                    </LinearLayout>
+
+                    <!-- ========== 最近识别列表容器 ========== -->
+                    <FrameLayout
+                        android:id="@+id/home_recent_box"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/pest_bg_card_12"
+                        android:clipToOutline="true"
+                        android:minHeight="72dp">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/home_recent_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:overScrollMode="never"
+                            app:visible="@{!safeUnbox(vm.guest) &amp;&amp; vm.uiState == UiState.SUCCESS}"
+                            tools:itemCount="3"
+                            tools:listitem="@layout/item_home_recent" />
+
+                        <!-- 首次加载：居中 24dp 圆形进度 -->
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/home_recent_loading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/home_recent_loading"
+                            android:indeterminate="true"
+                            app:indicatorSize="24dp"
+                            app:trackThickness="3dp"
+                            app:visible="@{!safeUnbox(vm.guest) &amp;&amp; vm.uiState == UiState.LOADING}" />
+
+                        <!-- 空状态 -->
+                        <TextView
+                            android:id="@+id/home_recent_empty"
+                            android:layout_width="match_parent"
+                            android:layout_height="72dp"
+                            android:gravity="center"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:text="@string/home_recent_empty"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:visibility="gone"
+                            app:visible="@{!safeUnbox(vm.guest) &amp;&amp; vm.uiState == UiState.EMPTY}" />
+
+                        <!-- 网络错误（列表无数据）：cloud_off + 原因 +「重试」 -->
+                        <LinearLayout
+                            android:id="@+id/home_recent_error"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:minHeight="72dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="8dp"
+                            android:visibility="gone"
+                            app:visible="@{!safeUnbox(vm.guest) &amp;&amp; vm.uiState == UiState.ERROR}">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_cloud_off"
+                                app:tint="?attr/colorOnSurfaceVariant" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:layout_weight="1"
+                                android:text="@{vm.errorText}"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                tools:text="网络连接失败，请检查网络后重试" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/home_recent_retry"
+                                style="@style/Widget.Pest.Button.Text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:onClick="@{() -> vm.retry()}"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:text="@string/pest_retry" />
+                        </LinearLayout>
+
+                        <!-- 游客：提示 +「去登录」 -->
+                        <LinearLayout
+                            android:id="@+id/home_recent_guest"
+                            android:layout_width="match_parent"
+                            android:layout_height="72dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="8dp"
+                            android:visibility="gone"
+                            app:visible="@{safeUnbox(vm.guest)}">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/home_guest_hint"
+                                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/home_recent_login"
+                                style="@style/Widget.Pest.Button.Text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="0dp"
+                                android:onClick="@{() -> vm.onLoginClick()}"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:text="@string/home_guest_login" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </LinearLayout>
+</layout>

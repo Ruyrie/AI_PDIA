@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.AiMessageMapper">
+
+    <insert id="insert" parameterType="com.heban.pestai.server.entity.AiMessage"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_ai_message (session_id, `role`, content, image_url, reasoning_content, reasoning_ms,
+                                  created_at, updated_at)
+        VALUES (#{sessionId}, #{role}, #{content}, #{imageUrl}, #{reasoningContent}, #{reasoningMs},
+                #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="selectTail" resultType="com.heban.pestai.server.entity.AiMessage">
+        SELECT id, session_id, `role`, content, image_url, created_at
+        FROM t_ai_message
+        WHERE session_id = #{sessionId}
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM t_ai_message WHERE id = #{id}
+    </delete>
+
+    <select id="selectRecent" resultType="com.heban.pestai.server.entity.AiMessage">
+        SELECT id, session_id, `role`, content, image_url, created_at
+        FROM t_ai_message
+        WHERE session_id = #{sessionId} AND id &lt; #{beforeId}
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 打开历史对话：全部消息正序（idx_session_created 定位会话，消息数少，按主键排序） -->
+    <select id="selectBySession" resultType="com.heban.pestai.server.entity.AiMessage">
+        SELECT id, session_id, `role`, content, image_url, reasoning_content, reasoning_ms, created_at
+        FROM t_ai_message
+        WHERE session_id = #{sessionId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="selectImageUrlsBySession" resultType="java.lang.String">
+        SELECT DISTINCT image_url
+        FROM t_ai_message
+        WHERE session_id = #{sessionId} AND image_url IS NOT NULL AND image_url &lt;&gt; ''
+    </select>
+
+    <delete id="deleteBySession">
+        DELETE FROM t_ai_message WHERE session_id = #{sessionId}
+    </delete>
+
+    <select id="selectImageUrlsInUse" resultType="java.lang.String">
+        SELECT DISTINCT image_url
+        FROM t_ai_message
+        WHERE image_url IN
+        <foreach collection="urls" item="url" open="(" separator="," close=")">#{url}</foreach>
+    </select>
+
+    <select id="countUserQuestions" resultType="long">
+        SELECT COUNT(*)
+        FROM t_ai_message m
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE s.user_id = #{userId} AND m.`role` = 'user'
+    </select>
+
+    <select id="selectImageUrlsByUser" resultType="java.lang.String">
+        SELECT DISTINCT m.image_url
+        FROM t_ai_message m
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE s.user_id = #{userId} AND m.image_url IS NOT NULL AND m.image_url &lt;&gt; ''
+    </select>
+
+    <!-- 多表 DELETE：只删除 m（消息）；会话随后由 AiSessionMapper.deleteByUser 删除 -->
+    <delete id="deleteByUser">
+        DELETE m
+        FROM t_ai_message m
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE s.user_id = #{userId}
+    </delete>
+</mapper>

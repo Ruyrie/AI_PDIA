@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_record（模块07 识别记录）文案，统一加 record_ 前缀 -->
+<resources>
+    <string name="record_title">识别记录</string>
+    <string name="record_scan">拍照识别</string>
+
+    <!-- 筛选 Chip -->
+    <string name="record_filter_all">全部</string>
+    <string name="record_filter_pest">病虫害</string>
+    <string name="record_filter_crop">作物 / 杂草</string>
+
+    <!-- 列表底部提示 -->
+    <string name="record_footer_hint">向左滑动记录可删除 · 共 %1$d 条</string>
+    <string name="record_footer_loading">正在加载…</string>
+    <string name="record_footer_failed">加载失败，点按重试</string>
+
+    <!-- 左滑删除与撤销 -->
+    <string name="record_delete">删除</string>
+    <string name="record_deleted_one">已删除 1 条记录</string>
+    <string name="record_undo">撤销</string>
+
+    <!-- 空状态（R04）/ 筛选后无记录 / 首次加载失败 -->
+    <string name="record_empty_title">还没有识别记录</string>
+    <string name="record_empty_desc">拍下作物的病叶或虫体，识别结果会自动保存在这里，方便随时回看</string>
+    <string name="record_empty_filtered_title">暂无该类记录</string>
+    <string name="record_empty_filtered_desc">还没有「%1$s」类的识别记录，可切换到「全部」查看</string>
+    <string name="record_go_scan">去拍照识别</string>
+    <string name="record_error_title">加载失败</string>
+    <string name="record_retry">重试</string>
+</resources>

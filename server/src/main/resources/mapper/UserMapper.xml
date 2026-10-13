@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.UserMapper">
+
+    <sql id="allColumns">
+        id, phone, password_hash, salt, recovery_code_hash, recovery_code_created_at, nickname, avatar_url, region,
+        `identity`, crops, `status`, token_version, last_login_at, sms_verified_at, created_at, updated_at
+    </sql>
+
+    <select id="selectById" resultType="com.heban.pestai.server.entity.User">
+        SELECT <include refid="allColumns"/>
+        FROM t_user
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectAuthInfo" resultType="com.heban.pestai.server.entity.User">
+        SELECT id, token_version, `status`
+        FROM t_user
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByPhone" resultType="com.heban.pestai.server.entity.User">
+        SELECT <include refid="allColumns"/>
+        FROM t_user
+        WHERE phone = #{phone}
+    </select>
+
+    <select id="selectCropsById" resultType="java.lang.String">
+        SELECT crops FROM t_user WHERE id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.heban.pestai.server.entity.User"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_user (phone, password_hash, nickname, avatar_url, region, `identity`, crops,
+                            `status`, token_version, created_at, updated_at)
+        VALUES (#{phone}, #{passwordHash}, #{nickname}, #{avatarUrl}, #{region}, #{identity}, #{crops},
+                #{status}, #{tokenVersion}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="markSmsVerified">
+        UPDATE t_user
+        SET sms_verified_at = #{now}, updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastLogin">
+        UPDATE t_user
+        SET last_login_at = #{now}, updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateProfile" parameterType="com.heban.pestai.server.entity.User">
+        UPDATE t_user
+        SET nickname = #{nickname},
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            region = #{region},
+            `identity` = #{identity},
+            crops = #{crops},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePasswordAndBumpVersion">
+        UPDATE t_user
+        SET password_hash = #{passwordHash},
+            token_version = token_version + 1,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePhoneAndBumpVersion">
+        UPDATE t_user
+        SET phone = #{phone},
+            token_version = token_version + 1,
+            sms_verified_at = #{now},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateForRebind">
+        UPDATE t_user
+        SET phone = #{phone},
+            <if test="passwordHash != null">password_hash = #{passwordHash},</if>
+            <if test="clearRecoveryCode">recovery_code_hash = NULL, recovery_code_created_at = NULL,</if>
+            token_version = token_version + 1,
+            last_login_at = #{now},
+            sms_verified_at = #{now},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateRecoveryCode">
+        UPDATE t_user
+        SET recovery_code_hash = #{recoveryCodeHash},
+            recovery_code_created_at = #{now},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="increaseTokenVersion">
+        UPDATE t_user
+        SET token_version = token_version + 1,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM t_user WHERE id = #{id}
+    </delete>
+</mapper>

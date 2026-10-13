@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 用户协议 / 隐私政策：本地 assets 文本，可滚动正文 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.mine.ui.agreement.AgreementViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/agreement_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/agreement_toolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:visible="@{vm.uiState == UiState.SUCCESS}">
+
+                <TextView
+                    android:id="@+id/agreement_tv_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineHeight="22sp"
+                    android:paddingStart="@dimen/pest_page_margin"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="@dimen/pest_page_margin"
+                    android:paddingBottom="24dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textIsSelectable="true" />
+            </androidx.core.widget.NestedScrollView>
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                app:visible="@{vm.uiState == UiState.LOADING}" />
+
+            <TextView
+                android:id="@+id/agreement_tv_error"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="@dimen/pest_page_margin"
+                android:gravity="center"
+                android:text="@string/mine_agreement_load_failed"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                app:visible="@{vm.uiState == UiState.ERROR}" />
+        </FrameLayout>
+    </LinearLayout>
+</layout>

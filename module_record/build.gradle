@@ -1,0 +1,19 @@
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+apply from: rootProject.file('gradle/pest-library.gradle')
+
+android {
+    namespace 'com.heban.pestai.record'
+}
+
+dependencies {
+    implementation project(':lib_network')
+    annotationProcessor libs.dagger.compiler
+
+    testImplementation libs.junit
+    testImplementation libs.core.testing
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tag 键（RecognizeBindingAdapters） -->
+    <item name="scan_tag_step_state" type="id" />
+    <item name="scan_tag_idle_icon" type="id" />
+</resources>

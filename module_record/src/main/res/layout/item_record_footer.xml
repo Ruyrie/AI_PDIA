@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    底部提示（列表最后一项，与上一组间距 16dp，水平居中）：
+    swipe_left 16dp + 6dp +「向左滑动记录可删除 · 共 N 条」；加载下一页时为 16dp 圆形进度 +「正在加载…」；
+    加载失败时为 refresh 图标 +「加载失败，点按重试」（点按重试）。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <import type="com.heban.pestai.record.ui.HistoryRow" />
+
+        <variable
+            name="row"
+            type="HistoryRow" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/record_group_gap"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="32dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_swipe_left"
+            app:tint="?attr/colorOnSurfaceVariant"
+            app:visible="@{row.footerState == HistoryRow.FOOTER_NORMAL}" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            app:indicatorColor="?attr/colorPrimary"
+            app:indicatorSize="16dp"
+            app:trackThickness="2dp"
+            app:visible="@{row.footerState == HistoryRow.FOOTER_LOADING}" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_refresh"
+            app:tint="?attr/colorOnSurfaceVariant"
+            app:visible="@{row.footerState == HistoryRow.FOOTER_FAILED}" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textAppearance="@style/TextAppearance.Pest.BodySmall"
+            app:recordFooterText="@{row}" />
+    </LinearLayout>
+</layout>

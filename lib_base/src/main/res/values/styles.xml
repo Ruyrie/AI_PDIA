@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 字阶与通用组件样式（公共数据 · UI 设计规范 四、五、七）。 -->
+<resources>
+
+    <!-- ========== 字阶 ========== -->
+    <style name="TextAppearance.Pest.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">28sp</item>
+        <item name="lineHeight">36sp</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">24sp</item>
+        <item name="lineHeight">32sp</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">22sp</item>
+        <item name="lineHeight">28sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.TitleLarge.Medium">
+        <item name="android:textFontWeight">500</item>
+    </style>
+    <style name="TextAppearance.Pest.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="TextAppearance.Pest.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    <style name="TextAppearance.Pest.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+        <item name="lineHeight">16sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    <style name="TextAppearance.Pest.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+    <style name="TextAppearance.Pest.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">12sp</item>
+        <item name="lineHeight">16sp</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+    <style name="TextAppearance.Pest.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">11sp</item>
+        <item name="lineHeight">16sp</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <!-- ========== 形状 ========== -->
+    <style name="ShapeAppearance.Pest.Full" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="ShapeAppearance.Pest.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    <style name="ShapeAppearance.Pest.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.Pest.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="ShapeAppearance.Pest.ExtraLarge" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <!-- ========== 按钮：全圆角 ========== -->
+    <!-- 表单页主按钮 56dp -->
+    <style name="Widget.Pest.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">@dimen/pest_button_height_form</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Pest.Full</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+    </style>
+    <!-- 页内按钮 48dp -->
+    <style name="Widget.Pest.Button.Medium">
+        <item name="android:minHeight">@dimen/pest_button_height</item>
+    </style>
+    <!-- 小按钮 40dp -->
+    <style name="Widget.Pest.Button.Small">
+        <item name="android:minHeight">@dimen/pest_button_height_small</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+    </style>
+    <style name="Widget.Pest.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/pest_button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Pest.Full</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+    </style>
+    <style name="Widget.Pest.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:minHeight">@dimen/pest_button_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Pest.Full</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+    </style>
+    <style name="Widget.Pest.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">@dimen/pest_touch_target</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+    </style>
+
+    <!-- ========== 输入框：Outlined，56dp，圆角 4dp ========== -->
+    <style name="Widget.Pest.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">4dp</item>
+        <item name="boxCornerRadiusTopEnd">4dp</item>
+        <item name="boxCornerRadiusBottomStart">4dp</item>
+        <item name="boxCornerRadiusBottomEnd">4dp</item>
+        <item name="boxStrokeColor">?attr/colorPrimary</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="errorTextAppearance">@style/TextAppearance.Pest.BodySmall</item>
+    </style>
+
+    <!-- ========== 顶部栏：64dp，标题 22sp，返回 arrow_back ========== -->
+    <style name="Widget.Pest.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:minHeight">@dimen/pest_toolbar_height</item>
+        <item name="titleTextAppearance">@style/TextAppearance.Pest.TitleLarge</item>
+        <item name="subtitleTextAppearance">@style/TextAppearance.Pest.LabelSmall</item>
+        <item name="navigationIconTint">?attr/colorOnSurface</item>
+        <item name="android:background">?attr/colorSurface</item>
+    </style>
+    <!-- 带返回按钮的顶部栏 -->
+    <style name="Widget.Pest.Toolbar.Back">
+        <item name="navigationIcon">@drawable/ic_arrow_back</item>
+        <item name="navigationContentDescription">@string/pest_back</item>
+    </style>
+
+    <!-- ========== 卡片：surfaceContainerLow 色块，不加阴影 ========== -->
+    <style name="Widget.Pest.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainerLow</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardCornerRadius">@dimen/pest_card_radius</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+    <!-- 需要强调边界时加 1dp outlineVariant 描边 -->
+    <style name="Widget.Pest.Card.Outlined">
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorOutlineVariant</item>
+    </style>
+
+    <!-- ========== 筛选 Chip：选中 secondaryContainer + check；未选透明 + 1dp outline ========== -->
+    <style name="Widget.Pest.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipMinHeight">32dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Pest.Small</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+        <item name="checkedIcon">@drawable/ic_check</item>
+        <item name="checkedIconTint">?attr/colorOnSecondaryContainer</item>
+    </style>
+
+    <!-- ========== 严重程度等小标签：高 24dp，圆角 8dp，12sp Medium ========== -->
+    <style name="Widget.Pest.Tag" parent="">
+        <item name="android:layout_height">@dimen/pest_tag_height</item>
+        <item name="android:minWidth">40dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/pest_bg_tag</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelMedium</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- ========== 底部导航：80dp，选中指示器 64×32dp secondaryContainer ========== -->
+    <style name="Widget.Pest.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">?attr/colorSurfaceContainer</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Pest.BottomNavigation.Indicator</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.Pest.LabelMedium</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.Pest.LabelMedium</item>
+        <item name="labelVisibilityMode">labeled</item>
+    </style>
+    <style name="Widget.Pest.BottomNavigation.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:width">64dp</item>
+        <item name="android:height">32dp</item>
+        <item name="android:color">?attr/colorSecondaryContainer</item>
+    </style>
+
+    <!-- ========== 分割线 ========== -->
+    <style name="Widget.Pest.Divider" parent="Widget.Material3.MaterialDivider">
+        <item name="dividerColor">?attr/colorOutlineVariant</item>
+    </style>
+</resources>

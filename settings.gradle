@@ -23,4 +23,17 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "AI_PDIA"
+
+// 壳工程
 include ':app'
+// 基础组件
+include ':lib_base'
+include ':lib_common'
+include ':lib_network'
+// 业务组件
+include ':module_account'
+include ':module_home'
+include ':module_recognize'
+include ':module_record'
+include ':module_ai'
+include ':module_mine'

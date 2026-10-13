@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A07 找回密码 · 验证手机：顶栏、步骤条、说明、手机号、验证码、找回账号提示条、下一步 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.account.ui.forgot.ForgotPwdViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/forgot_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/forgot_toolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            app:title="@string/account_forgot_title"
+            app:titleTextAppearance="@style/TextAppearance.Pest.TitleLarge.Medium" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/pest_form_margin"
+                android:paddingTop="16dp"
+                android:paddingEnd="@dimen/pest_form_margin"
+                android:paddingBottom="24dp">
+
+                <com.heban.pestai.account.ui.common.AccountStepBar
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:accountStep="1"
+                    app:accountStepFirst="@string/account_step_verify_phone"
+                    app:accountStepSecond="@string/account_step_set_password" />
+
+                <TextView
+                    android:id="@+id/forgot_desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/account_forgot_desc"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <!-- 手机号：从设置页进入时预填且不可修改 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/forgot_phone_layout"
+                    style="@style/Widget.Account.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:enabled="@{vm.phoneEditable}"
+                    android:hint="@string/account_phone"
+                    app:accountHelper="@{vm.phoneError}"
+                    app:accountHelperError="@{true}"
+                    app:prefixText="@string/account_phone_prefix">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:digits="0123456789 "
+                        android:imeOptions="actionNext"
+                        android:inputType="phone"
+                        android:maxLength="13"
+                        android:text="@={vm.phone}" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 验证码：右侧「获取验证码」/「{N}s 后重发」，下方「已发送至 138****5678」 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/forgot_code_layout"
+                    style="@style/Widget.Account.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/account_field_gap"
+                    android:hint="@string/account_code"
+                    app:accountCodeActionEnabled="@{vm.canSendCode}"
+                    app:accountHelper="@{vm.sentHint}"
+                    app:placeholderText="@string/account_code_placeholder"
+                    app:suffixText="@{vm.countdownText}">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/forgot_code_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="number"
+                        android:maxLength="6"
+                        android:text="@={vm.code}" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 找回账号提示条：tertiaryContainer 底，圆角 12dp，打开 A09 -->
+                <LinearLayout
+                    android:id="@+id/forgot_recover_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/pest_bg_card_12"
+                    android:backgroundTint="?attr/colorTertiaryContainer"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:minHeight="52dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="12dp"
+                    app:onSafeClick="@{() -> vm.openRecover()}">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_help"
+                        app:tint="?attr/colorOnTertiaryContainer" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:text="@string/account_recover_banner"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnTertiaryContainer" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/account_recover_banner_action"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="?attr/colorTertiary" />
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorTertiary" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        style="@style/Widget.Pest.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/pest_button_height_form"
+                        android:enabled="@{vm.canNext}"
+                        android:onClick="@{() -> vm.next()}"
+                        android:text="@{vm.loading ? `` : @string/account_next}" />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:elevation="8dp"
+                        android:indeterminate="true"
+                        app:indicatorColor="?attr/colorOnSurfaceVariant"
+                        app:indicatorSize="24dp"
+                        app:trackThickness="3dp"
+                        app:visible="@{vm.loading}" />
+                </FrameLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</layout>

@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S02 识别中：照片区 + 扫描线、总进度、三步骤状态、耗时提示；底部「取消识别」「查看结果」 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.heban.pestai.base.UiState" />
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.recognize.ui.analyzing.AnalyzingViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/analyzingRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/analyzingToolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            app:navigationIconTint="?attr/colorOnSurfaceVariant"
+            app:title="@{vm.title}"
+            tools:title="@string/scan_analyzing_title" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="24dp">
+
+                <!-- 照片区：340dp，圆角 28dp -->
+                <FrameLayout
+                    android:id="@+id/analyzingPhotoArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="340dp"
+                    android:background="@drawable/scan_bg_photo_28"
+                    android:clipToOutline="true">
+
+                    <ImageView
+                        android:id="@+id/analyzingPhotoState"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_image"
+                        app:tint="?attr/colorOutline" />
+
+                    <ImageView
+                        android:id="@+id/analyzingPhoto"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/scan_analyzing_photo_desc"
+                        android:scaleType="centerCrop" />
+
+                    <!-- 扫描线：左右缩进 16dp，3dp 实线 + 上下 12dp 光晕，只在识别中显示 -->
+                    <View
+                        android:id="@+id/analyzingScanLine"
+                        android:layout_width="match_parent"
+                        android:layout_height="27dp"
+                        android:layout_gravity="top"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@drawable/scan_scan_line"
+                        android:importantForAccessibility="no"
+                        app:visible="@{vm.uiState == UiState.LOADING}" />
+
+                    <!-- 模式标签 -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/scan_bg_photo_label"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:importantForAccessibility="no"
+                            app:scanModeIcon="@{vm.recognizeMode.value()}"
+                            app:tint="?attr/colorOnPrimary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="@{vm.cropMode ? @string/scan_mode_label_crop : @string/scan_mode_label_pest}"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnPrimary"
+                            tools:text="@string/scan_mode_label_pest" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <!-- 进度区 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@{vm.statusText}"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        tools:text="@string/scan_analyzing_status_analyzing" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="@{vm.progressText}"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        tools:text="72%" />
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/analyzingProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:max="100"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:indicatorTrackGapSize="0dp"
+                    app:scanProgress="@{vm.progress}"
+                    app:trackColor="?attr/colorSecondaryContainer"
+                    app:trackCornerRadius="2dp"
+                    app:trackStopIndicatorSize="0dp"
+                    app:trackThickness="4dp" />
+
+                <!-- 步骤卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/pest_bg_card_12"
+                    android:orientation="vertical">
+
+                    <!-- 1. 压缩照片 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <FrameLayout
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            app:scanStepState="@{vm.stepStates[0]}">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/pest_bg_circle"
+                                android:importantForAccessibility="no"
+                                android:padding="6dp" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:indeterminate="true"
+                                android:visibility="gone"
+                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorInset="0dp"
+                                app:indicatorSize="20dp"
+                                app:trackColor="?attr/colorSecondaryContainer"
+                                app:trackThickness="3dp" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@string/scan_step_compress"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            app:scanStepName="@{vm.stepStates[0]}" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:text="@{vm.compressText}"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            tools:text="1.2 MB → 320 KB" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 2. 上传到识别服务 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <FrameLayout
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            app:scanStepState="@{vm.stepStates[1]}">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/pest_bg_circle"
+                                android:importantForAccessibility="no"
+                                android:padding="6dp" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:indeterminate="true"
+                                android:visibility="gone"
+                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorInset="0dp"
+                                app:indicatorSize="20dp"
+                                app:trackColor="?attr/colorSecondaryContainer"
+                                app:trackThickness="3dp" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@string/scan_step_upload"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            app:scanStepName="@{vm.stepStates[1]}" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:text="@{vm.uploadText}"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            tools:text="已完成" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 3. AI 分析 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <FrameLayout
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            app:scanStepState="@{vm.stepStates[2]}">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/pest_bg_circle"
+                                android:importantForAccessibility="no"
+                                android:padding="6dp" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:indeterminate="true"
+                                android:visibility="gone"
+                                app:indicatorColor="?attr/colorPrimary"
+                                app:indicatorInset="0dp"
+                                app:indicatorSize="20dp"
+                                app:trackColor="?attr/colorSecondaryContainer"
+                                app:trackThickness="3dp" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="@{vm.cropMode ? @string/scan_step_analyze_crop : @string/scan_step_analyze_pest}"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            app:scanStepName="@{vm.stepStates[2]}"
+                            tools:text="@string/scan_step_analyze_pest" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:text="@{vm.analyzeText}"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            tools:text="进行中" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 耗时提示 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_schedule"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/scan_analyzing_duration"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- 底部按钮栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="32dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/analyzingCancel"
+                style="@style/Widget.Pest.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/scan_analyzing_cancel"
+                app:onSafeClick="@{() -> vm.cancel()}" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/analyzingViewResult"
+                style="@style/Widget.Pest.Button.Medium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/scan_analyzing_view_result"
+                android:visibility="gone"
+                app:onSafeClick="@{() -> vm.viewResult()}"
+                app:visible="@{vm.uiState == UiState.SUCCESS}" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

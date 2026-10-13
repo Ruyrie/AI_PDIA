@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        A01 启动主题（core-splashscreen）：系统启动画面背景与闪屏同为 surface 色，图标为与 A01 相同的
+        primary 圆角方块 + 白色嫩芽 Logo；installSplashScreen() 后切换为应用正式主题 Theme.Pest。
+    -->
+    <style name="Theme.Account.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/pest_surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/account_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.Pest</item>
+    </style>
+</resources>

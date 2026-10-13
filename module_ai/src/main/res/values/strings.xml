@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_ai（模块08 AI 问答）文案，统一 ai_ 前缀 -->
+<resources>
+    <string name="ai_title">AI 问答</string>
+    <string name="ai_disclaimer">大模型生成 · 仅供参考</string>
+    <string name="ai_new_chat">新对话</string>
+    <string name="ai_history">历史对话</string>
+
+    <!-- Q01 -->
+    <string name="ai_welcome_title">你好，我是 AI 植保助手</string>
+    <string name="ai_welcome_desc">描述作物的症状、拍张照片，或者接着识别结果继续问，我来帮你分析原因和处理办法</string>
+    <string name="ai_cap_text_title">文字提问</string>
+    <string name="ai_cap_text_desc">描述症状和发生部位</string>
+    <string name="ai_cap_image_title">带图提问</string>
+    <string name="ai_cap_image_desc">附上照片看得更准</string>
+    <string name="ai_cap_follow_title">追问结果</string>
+    <string name="ai_cap_follow_desc">接着识别结果问</string>
+    <string name="ai_continue_ask">继续追问</string>
+    <string name="ai_suggestions_title">大家常问</string>
+    <string name="ai_input_hint">描述作物问题…</string>
+    <string name="ai_input_hint_image">描述这张照片的问题…</string>
+    <string name="ai_latest_thumb">最近识别的照片</string>
+
+    <!-- Q01 带图提问 / 追问结果 -->
+    <string name="ai_source_camera">拍照</string>
+    <string name="ai_source_album">从相册选择</string>
+    <string name="ai_camera_denied">需要相机权限才能拍照，也可以从相册选择</string>
+    <string name="ai_camera_unavailable">无法打开相机，请从相册选择</string>
+    <string name="ai_picker_title">选择要追问的识别记录</string>
+    <string name="ai_picker_empty">还没有识别记录</string>
+    <string name="ai_picker_go_scan">去拍照识别</string>
+
+    <!-- 输入栏 -->
+    <string name="ai_pick_image">添加图片</string>
+    <string name="ai_pending_image">待发送的图片</string>
+    <string name="ai_remove_image">移除图片</string>
+    <string name="ai_send">发送</string>
+    <string name="ai_stop">停止生成</string>
+
+    <!-- Q02 -->
+    <string name="ai_chat_input_hint">继续追问…</string>
+    <string name="ai_quote_label">识别结果</string>
+    <string name="ai_photo">照片</string>
+    <string name="ai_avatar">AI 植保助手</string>
+    <string name="ai_copy">复制</string>
+    <string name="ai_regenerate">重新生成</string>
+    <string name="ai_copied">已复制</string>
+    <string name="ai_clip_label">AI 回答</string>
+    <string name="ai_notice_broken">回答中断，点按重试</string>
+    <string name="ai_notice_unavailable">AI 服务暂不可用，请稍后再试</string>
+    <string name="ai_notice_empty">AI 暂时没有给出回答，请换个问法试试</string>
+    <string name="ai_image_retry">图片上传失败，点按重试</string>
+    <string name="ai_scroll_bottom">回到底部</string>
+    <string name="ai_reasoning_expand">展开思考过程</string>
+    <string name="ai_reasoning_collapse">收起思考过程</string>
+
+    <!-- Q03 历史对话 -->
+    <string name="ai_history_title">历史对话</string>
+    <string name="ai_history_tag_follow">识别追问</string>
+    <string name="ai_history_empty_title">还没有对话记录</string>
+    <string name="ai_history_empty_desc">在 AI 问答里提问后，对话会保存在这里</string>
+    <string name="ai_history_start">开始提问</string>
+    <string name="ai_history_delete_title">删除这条对话？</string>
+    <string name="ai_history_delete_message">删除后无法恢复。</string>
+    <string name="ai_history_delete">删除</string>
+    <string name="ai_history_loading_more">正在加载…</string>
+    <string name="ai_history_load_more_failed">加载失败，点按重试</string>
+
+    <!-- 游客拦截 -->
+    <string name="ai_login_title">登录后才能使用</string>
+    <string name="ai_login_message">登录后即可向 AI 提问，对话记录会保存在你的账号中</string>
+    <string name="ai_go_login">去登录</string>
+</resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_mine 文案（mine_ 前缀）。由 VO 派生的界面文字（统计、版本等）在 format 包与 ViewModel 中生成。 -->
+<resources>
+    <!-- 通用 -->
+    <string name="mine_app_name">病虫害识别助手</string>
+    <string name="mine_page_not_ready">该页面暂未开放</string>
+    <string name="mine_need_login_title">登录后才能使用</string>
+    <string name="mine_go_login">去登录</string>
+
+    <!-- M01 我的 -->
+    <string name="mine_title">我的</string>
+    <string name="mine_not_logged_in">未登录</string>
+    <string name="mine_login_register">登录 / 注册</string>
+    <string name="mine_stat_total">累计识别</string>
+    <string name="mine_stat_pest_kinds">识别出的病虫害</string>
+    <string name="mine_stat_ai">AI 问答</string>
+    <string name="mine_go_scan">去识别</string>
+    <string name="mine_entry_history">识别记录</string>
+    <string name="mine_entry_ai">AI 问答</string>
+    <string name="mine_entry_settings">设置</string>
+    <string name="mine_entry_about">关于</string>
+    <string name="mine_recovery_reminder_title">你还没有保存账号恢复码</string>
+    <string name="mine_recovery_reminder_desc">手机号停用又忘记密码时，可以用它找回账号</string>
+    <string name="mine_recovery_reminder_action">去生成</string>
+    <string name="mine_recovery_reminder_close">关闭提醒</string>
+
+    <!-- M02 设置 -->
+    <string name="mine_settings_title">设置</string>
+    <string name="mine_settings_group_account">账号</string>
+    <string name="mine_settings_group_recognize">识别与问答</string>
+    <string name="mine_settings_group_about">关于</string>
+    <string name="mine_settings_phone">手机号</string>
+    <string name="mine_settings_change_pwd">修改密码</string>
+    <string name="mine_settings_change_pwd_desc">短信验证后设置新密码</string>
+    <string name="mine_settings_recovery_code">账号恢复码</string>
+    <string name="mine_settings_recovery_code_missing">未生成</string>
+    <string name="mine_settings_deactivate">注销账号</string>
+    <string name="mine_settings_deactivate_desc">永久删除账号与全部数据</string>
+    <string name="mine_settings_save_album">识别照片保存到相册</string>
+    <string name="mine_settings_save_album_desc">拍照识别后同时保存一份原图</string>
+    <string name="mine_settings_clear_cache">清理图片缓存</string>
+    <string name="mine_settings_clear">清理</string>
+    <string name="mine_settings_about_app">关于病虫害识别助手</string>
+    <string name="mine_settings_switch_account">切换账号</string>
+    <string name="mine_settings_logout">退出登录</string>
+    <string name="mine_logout_title">退出登录？</string>
+    <string name="mine_logout_message">识别记录和对话会保留在本机，重新登录同一账号后可以继续查看。</string>
+
+    <!-- M03 关于 -->
+    <string name="mine_about_title">关于</string>
+    <string name="mine_check_update">检查更新</string>
+    <string name="mine_user_agreement">用户协议</string>
+    <string name="mine_privacy_policy">隐私政策</string>
+    <string name="mine_about_footer">识别结果与 AI 回答由大模型生成，仅供参考\n照片仅用于识别，不会公开展示</string>
+    <string name="mine_not_open">功能尚未开放</string>
+
+    <!-- 协议页 -->
+    <string name="mine_agreement_load_failed">协议内容加载失败，请稍后重试</string>
+</resources>

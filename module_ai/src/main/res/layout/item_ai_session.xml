@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q03 历史对话一行（72dp 双行，分组圆角卡片，组内间隔 2dp 由代码设置上边距）：
+     标题 TitleMedium 单行省略 + 关联识别记录时的「识别追问」小标签（tertiaryContainer）+ 右上角时间 BodySmall；
+     第二行最后一条消息预览 BodyMedium 单行省略。点击继续对话，长按删除 -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/ai_session_item"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/pest_list_item_two_line"
+    android:background="@drawable/ai_bg_session_single"
+    android:clickable="true"
+    android:focusable="true"
+    android:longClickable="true"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <TextView
+        android:id="@+id/ai_session_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toTopOf="@id/ai_session_preview"
+        app:layout_constraintEnd_toStartOf="@id/ai_session_tag"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/ai_session_tag"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/pest_bg_tag"
+        android:backgroundTint="?attr/colorTertiaryContainer"
+        android:gravity="center"
+        android:maxLines="1"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/ai_history_tag_follow"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnTertiaryContainer"
+        app:layout_constraintBottom_toBottomOf="@id/ai_session_title"
+        app:layout_constraintEnd_toStartOf="@id/ai_session_time"
+        app:layout_constraintStart_toEndOf="@id/ai_session_title"
+        app:layout_constraintTop_toTopOf="@id/ai_session_title" />
+
+    <TextView
+        android:id="@+id/ai_session_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        app:layout_constraintBaseline_toBaselineOf="@id/ai_session_title"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/ai_session_preview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ai_session_title" />
+</androidx.constraintlayout.widget.ConstraintLayout>

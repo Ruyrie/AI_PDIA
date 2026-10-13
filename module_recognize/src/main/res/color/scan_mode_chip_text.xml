@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 模式胶囊文字：选中 #173807，未选 #C3C8BB -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/scan_on_accent" android:state_selected="true" />
+    <item android:color="@color/scan_on_dark_variant" />
+</selector>

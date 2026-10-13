@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    识别成功的记录行（72dp）：组内行间 1dp outlineVariant 分割线 + SwipeItemLayout。
+    SwipeItemLayout 第 0 个子 View 为下层删除按钮（88dp，error 底），第 1 个子 View 为上层内容（surfaceContainerLow 底）。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="row"
+            type="com.heban.pestai.record.ui.HistoryRow" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorOutlineVariant"
+            app:visible="@{!row.first}" />
+
+        <com.heban.pestai.record.widget.SwipeItemLayout
+            android:id="@+id/record_swipe"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/record_row_height">
+
+            <LinearLayout
+                android:id="@+id/record_btn_delete"
+                android:layout_width="@dimen/record_delete_width"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="?attr/colorError"
+                android:clickable="true"
+                android:contentDescription="@string/record_delete"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_delete"
+                    app:tint="?attr/colorOnError" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:importantForAccessibility="no"
+                    android:text="@string/record_delete"
+                    android:textAppearance="@style/TextAppearance.Pest.LabelMedium"
+                    android:textColor="?attr/colorOnError" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/record_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/colorSurfaceContainerLow"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:id="@+id/record_thumb"
+                    android:layout_width="@dimen/record_thumb_size"
+                    android:layout_height="@dimen/record_thumb_size"
+                    android:background="@drawable/record_bg_thumb"
+                    android:clipToOutline="true"
+                    android:importantForAccessibility="no"
+                    android:outlineProvider="background"
+                    android:scaleType="centerCrop"
+                    app:recordThumb="@{row.imageUrl}"
+                    tools:src="@drawable/record_thumb_placeholder" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="@{row.title}"
+                        android:textAppearance="@style/TextAppearance.Pest.BodyLarge"
+                        tools:text="黄瓜霜霉病" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="@{row.subtitle}"
+                        android:textAppearance="@style/TextAppearance.Pest.BodySmall"
+                        tools:text="病虫害 · 匹配度 92% · 14:20" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Widget.Pest.Tag"
+                    android:layout_width="wrap_content"
+                    app:recordTag="@{row.tag}"
+                    tools:text="中度" />
+            </LinearLayout>
+        </com.heban.pestai.record.widget.SwipeItemLayout>
+    </LinearLayout>
+</layout>

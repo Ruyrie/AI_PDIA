@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 验证码输入框右侧「获取验证码」前的 1dp 竖线（右侧留 16dp 与文字间隔） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="1dp"
+        android:height="32dp"
+        android:end="16dp"
+        android:gravity="start|center_vertical">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorOutlineVariant" />
+        </shape>
+    </item>
+</layer-list>

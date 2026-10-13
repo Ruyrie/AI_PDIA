@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- S01 相机预览与拍照；没有摄像头的设备也能安装，通过相册完成识别 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <application>
+
+        <!-- S01 拍照识别：全 App 唯一深色页 -->
+        <activity
+            android:name=".ui.scan.ScanActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Pest.Camera">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.SCAN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- S02 识别中 -->
+        <activity
+            android:name=".ui.analyzing.AnalyzingActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.ANALYZING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- R01 识别结果 -->
+        <activity
+            android:name=".ui.result.ResultActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.SCAN_RESULT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- R02 识别异常 -->
+        <activity
+            android:name=".ui.error.ScanErrorActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.heban.pestai.action.SCAN_ERROR" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- 「先启动再绑定」的识别服务：压缩 → 上传 → 等待识别结果 -->
+        <service
+            android:name=".service.RecognizeService"
+            android:exported="false" />
+    </application>
+
+</manifest>

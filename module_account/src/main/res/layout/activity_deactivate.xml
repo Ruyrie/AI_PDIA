@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A11 注销账号：顶栏、警示卡（errorContainer）、验证当前手机号（只读号码 + 验证码）、确认复选框、「注销账号」（error 底）。
+    点「注销账号」后弹出二次确认对话框，确认后才提交。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.account.ui.deactivate.DeactivateViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/deactivate_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/deactivate_toolbar"
+            style="@style/Widget.Pest.Toolbar.Back"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            app:title="@string/account_deactivate_title"
+            app:titleTextAppearance="@style/TextAppearance.Pest.TitleLarge.Medium" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/pest_form_margin"
+                android:paddingTop="16dp"
+                android:paddingEnd="@dimen/pest_form_margin"
+                android:paddingBottom="24dp">
+
+                <!-- 警示卡：errorContainer 底，圆角 16dp，内边距 16dp -->
+                <LinearLayout
+                    android:id="@+id/deactivate_warning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/pest_bg_card"
+                    android:backgroundTint="?attr/colorErrorContainer"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_warning"
+                            app:tint="?attr/colorOnErrorContainer" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:minHeight="24dp"
+                            android:gravity="center_vertical"
+                            android:text="@string/account_deactivate_warning_title"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnErrorContainer" />
+                    </LinearLayout>
+
+                    <!-- 删除内容列表：与标题文字左对齐 -->
+                    <include
+                        layout="@layout/view_account_bullet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="8dp"
+                        app:text="@{@string/account_deactivate_item_profile}" />
+
+                    <include
+                        layout="@layout/view_account_bullet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="4dp"
+                        app:text="@{@string/account_deactivate_item_records}" />
+
+                    <include
+                        layout="@layout/view_account_bullet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="4dp"
+                        app:text="@{@string/account_deactivate_item_chats}" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:paddingStart="36dp"
+                        android:text="@string/account_deactivate_reregister"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnErrorContainer" />
+                </LinearLayout>
+
+                <!-- 验证当前手机号：只读号码 + 验证码（发往当前手机号） -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:text="@string/account_deactivate_verify"
+                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                <TextView
+                    android:id="@+id/deactivate_phone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@{vm.currentMasked}"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="138****5678" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/deactivate_code_layout"
+                    style="@style/Widget.Account.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:hint="@string/account_code"
+                    app:accountCodeActionEnabled="@{vm.canSendCode}"
+                    app:accountHelper="@{vm.codeHint}"
+                    app:accountHelperError="@{vm.codeHintError}"
+                    app:placeholderText="@string/account_code_placeholder"
+                    app:suffixText="@{vm.countdownText}">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/deactivate_code_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:imeOptions="actionDone"
+                        android:inputType="number"
+                        android:maxLength="6"
+                        android:text="@={vm.code}" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 确认复选框：点文字同样切换 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/deactivate_agree"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="-15dp"
+                        android:checked="@={vm.agreed}"
+                        android:contentDescription="@string/account_deactivate_agree" />
+
+                    <TextView
+                        android:id="@+id/deactivate_agree_text"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:importantForAccessibility="no"
+                        android:minHeight="@dimen/pest_touch_target"
+                        android:gravity="center_vertical"
+                        android:text="@string/account_deactivate_agree"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <!-- 主按钮：error 底 onError 字；勾选且验证码 6 位时可点，提交中按钮内显示进度 -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        style="@style/Widget.Pest.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/pest_button_height_form"
+                        android:enabled="@{vm.canSubmit}"
+                        android:onClick="@{() -> vm.submit()}"
+                        android:text="@{vm.loading ? `` : @string/account_deactivate_submit}"
+                        android:textColor="@color/account_button_error_text"
+                        app:backgroundTint="@color/account_button_error_background" />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:elevation="8dp"
+                        android:indeterminate="true"
+                        app:indicatorColor="?attr/colorOnSurfaceVariant"
+                        app:indicatorSize="24dp"
+                        app:trackThickness="3dp"
+                        app:visible="@{vm.loading}" />
+                </FrameLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</layout>

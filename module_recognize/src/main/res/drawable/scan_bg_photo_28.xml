@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S02 照片区：surfaceContainerHighest 底，圆角 28dp（配合 clipToOutline 裁剪照片与扫描线） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceContainerHighest" />
+    <corners android:radius="28dp" />
+</shape>

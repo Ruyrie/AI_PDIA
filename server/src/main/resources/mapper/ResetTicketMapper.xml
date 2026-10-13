@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.ResetTicketMapper">
+
+    <select id="selectByHash" resultType="com.heban.pestai.server.entity.ResetTicket">
+        SELECT id, user_id, phone, ticket_hash, purpose, expire_at, used, created_at
+        FROM t_reset_ticket
+        WHERE ticket_hash = #{ticketHash}
+    </select>
+
+    <insert id="insert" parameterType="com.heban.pestai.server.entity.ResetTicket"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_reset_ticket (user_id, phone, ticket_hash, purpose, expire_at, used, created_at, updated_at)
+        VALUES (#{userId}, #{phone}, #{ticketHash}, #{purpose}, #{expireAt}, #{used}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="invalidateByUser">
+        UPDATE t_reset_ticket
+        SET used = 1, updated_at = #{now}
+        WHERE user_id = #{userId} AND used = 0
+    </update>
+
+    <update id="markUsed">
+        UPDATE t_reset_ticket
+        SET used = 1, updated_at = #{now}
+        WHERE id = #{id} AND used = 0
+    </update>
+
+    <delete id="deleteCreatedBefore">
+        DELETE FROM t_reset_ticket
+        WHERE created_at &lt; #{before}
+    </delete>
+
+    <delete id="deleteByUser">
+        DELETE FROM t_reset_ticket WHERE user_id = #{userId}
+    </delete>
+</mapper>

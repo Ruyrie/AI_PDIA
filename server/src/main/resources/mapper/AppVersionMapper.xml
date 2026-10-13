@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.AppVersionMapper">
+
+    <select id="selectLatest" resultType="com.heban.pestai.server.entity.AppVersion">
+        SELECT id, version_code, version_name, download_url, force_update, release_note
+        FROM t_app_version
+        ORDER BY version_code DESC
+        LIMIT 1
+    </select>
+
+    <select id="countForceBetween" resultType="int">
+        SELECT COUNT(*)
+        FROM t_app_version
+        WHERE version_code &gt; #{fromExclusive}
+          AND version_code &lt;= #{toInclusive}
+          AND force_update = 1
+    </select>
+</mapper>

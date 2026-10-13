@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 步骤条「① 验证手机 —— ② 设置新密码」（AccountStepBar 内部布局） -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:orientation="horizontal"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <FrameLayout
+        android:id="@+id/step_circle_1"
+        android:layout_width="@dimen/account_step_circle"
+        android:layout_height="@dimen/account_step_circle">
+
+        <TextView
+            android:id="@+id/step_number_1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="1"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            tools:ignore="HardcodedText" />
+
+        <ImageView
+            android:id="@+id/step_check_1"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_check"
+            android:visibility="gone"
+            app:tint="?attr/colorOnPrimaryContainer" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/step_label_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+    <View
+        android:id="@+id/step_line"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_weight="1" />
+
+    <FrameLayout
+        android:id="@+id/step_circle_2"
+        android:layout_width="@dimen/account_step_circle"
+        android:layout_height="@dimen/account_step_circle">
+
+        <TextView
+            android:id="@+id/step_number_2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="2"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            tools:ignore="HardcodedText" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/step_label_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+</merge>

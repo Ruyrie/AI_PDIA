@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A09 找回账号（原手机号已停用）：
+    ① 验证身份（原手机号 + 登录密码 / 恢复码）→ ② 验证新手机号（恢复码方式同时设置新密码）→ 成功态（已自动登录）；
+    「密码和恢复码都忘了？」→「无法验证身份」状态。不收集昵称、地区、最近登录时间等无法核实的信息。
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="vm"
+            type="com.heban.pestai.account.ui.recover.RecoverAccountViewModel" />
+    </data>
+
+    <FrameLayout
+        android:id="@+id/recover_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface">
+
+        <!-- 表单（第 1、2 步）与「无法验证身份」 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:visible="@{vm.step != 3}">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/recover_toolbar"
+                style="@style/Widget.Pest.Toolbar.Back"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/pest_toolbar_height"
+                app:title="@string/account_recover_title"
+                app:titleTextAppearance="@style/TextAppearance.Pest.TitleLarge.Medium" />
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/recover_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/pest_form_margin"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="@dimen/pest_form_margin"
+                    android:paddingBottom="24dp">
+
+                    <com.heban.pestai.account.ui.common.AccountStepBar
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:accountStep="@{vm.step}"
+                        app:accountStepFirst="@string/account_step_verify_identity"
+                        app:accountStepSecond="@string/account_step_verify_new_phone"
+                        app:visible="@{vm.step == 1 || vm.step == 2}" />
+
+                    <!-- ========== 第 1 步：验证身份 ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:visible="@{vm.step == 1}">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="@string/account_recover_desc_1"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <!-- 原手机号：+86、3-4-4 分隔；格式错误 / 40104 未注册提示在下方 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recover_old_phone_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:hint="@string/account_old_phone"
+                            app:accountHelper="@{vm.oldPhoneError}"
+                            app:accountHelperError="@{true}"
+                            app:placeholderText="@string/account_old_phone_placeholder"
+                            app:prefixText="@string/account_phone_prefix">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:digits="0123456789 "
+                                android:imeOptions="actionNext"
+                                android:inputType="phone"
+                                android:maxLength="13"
+                                android:text="@={vm.oldPhone}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- 验证方式：登录密码 / 恢复码 -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/account_field_gap"
+                            android:text="@string/account_recover_method"
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/recover_method_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/recover_method_password"
+                                style="@style/Widget.Account.SegmentButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/account_recover_method_password" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/recover_method_code"
+                                style="@style/Widget.Account.SegmentButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/account_recover_method_code" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <!-- 登录密码（带眼睛）；40102 提示在下方 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recover_password_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/account_field_gap"
+                            android:hint="@string/account_recover_password"
+                            app:accountEyeOpen="@{vm.passwordVisible}"
+                            app:accountHelper="@{vm.passwordError}"
+                            app:accountHelperError="@{true}"
+                            app:endIconContentDescription="@string/account_toggle_password_desc"
+                            app:endIconDrawable="@drawable/ic_visibility"
+                            app:endIconMode="custom"
+                            app:placeholderText="@string/account_recover_password_placeholder"
+                            app:visible="@{vm.passwordMethod}">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionDone"
+                                android:inputType="textPassword"
+                                android:maxLength="20"
+                                android:text="@={vm.password}"
+                                app:accountPasswordVisible="@{vm.passwordVisible}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- 恢复码：自动大写、按 4 位加连字符；下方说明 / 字符错误 / 40105 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recover_code_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/account_field_gap"
+                            android:hint="@string/account_recovery_code"
+                            app:accountHelper="@{vm.recoveryCodeHint}"
+                            app:accountHelperError="@{vm.recoveryCodeHintError}"
+                            app:placeholderText="@string/account_recovery_code_placeholder"
+                            app:visible="@{!vm.passwordMethod}"
+                            tools:visibility="gone">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/recover_code_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:imeOptions="actionDone"
+                                android:inputType="textCapCharacters|textNoSuggestions|textVisiblePassword"
+                                android:maxLength="32"
+                                android:maxLines="1"
+                                android:text="@={vm.recoveryCode}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.Pest.Button"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/pest_button_height_form"
+                                android:enabled="@{vm.canNext}"
+                                android:onClick="@{() -> vm.next()}"
+                                android:text="@{vm.verifying ? `` : @string/account_next}" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:elevation="8dp"
+                                android:indeterminate="true"
+                                app:indicatorColor="?attr/colorOnSurfaceVariant"
+                                app:indicatorSize="24dp"
+                                app:trackThickness="3dp"
+                                app:visible="@{vm.verifying}" />
+                        </FrameLayout>
+
+                        <!-- 都不记得：显示「无法验证身份」 -->
+                        <com.google.android.material.button.MaterialButton
+                            style="@style/Widget.Pest.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/account_recover_forgot_both"
+                            app:onSafeClick="@{() -> vm.cannotVerify()}" />
+                    </LinearLayout>
+
+                    <!-- ========== 第 2 步：验证新手机号 ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:visible="@{vm.step == 2}"
+                        tools:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="@{vm.needNewPassword ? @string/account_recover_desc_2_code : @string/account_recover_desc_2}"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <!-- 新手机号：格式错误 / 与原号相同 / 40901 已注册提示在下方 -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recover_new_phone_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:hint="@string/account_new_phone"
+                            app:accountHelper="@{vm.newPhoneError}"
+                            app:accountHelperError="@{true}"
+                            app:placeholderText="@string/account_new_phone_placeholder"
+                            app:prefixText="@string/account_phone_prefix">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:digits="0123456789 "
+                                android:imeOptions="actionNext"
+                                android:inputType="phone"
+                                android:maxLength="13"
+                                android:text="@={vm.newPhone}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- 验证码（REBIND 场景，发往新手机号） -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/recover_sms_layout"
+                            style="@style/Widget.Account.TextInputLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/account_field_gap"
+                            android:hint="@string/account_code"
+                            app:accountCodeActionEnabled="@{vm.canSendCode}"
+                            app:accountHelper="@{vm.codeHint}"
+                            app:accountHelperError="@{vm.codeHintError}"
+                            app:placeholderText="@string/account_code_placeholder"
+                            app:suffixText="@{vm.countdownText}">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/recover_sms_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionNext"
+                                android:inputType="number"
+                                android:maxLength="6"
+                                android:text="@={vm.code}" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- 恢复码方式：设置新密码（强度条、规则卡与 A08 共用） -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            app:visible="@{vm.needNewPassword}">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/recover_new_password_layout"
+                                style="@style/Widget.Account.TextInputLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/account_field_gap"
+                                android:hint="@string/account_set_new_password"
+                                app:accountEyeOpen="@{vm.newPasswordVisible}"
+                                app:accountHelper="@{vm.newPasswordError}"
+                                app:accountHelperError="@{true}"
+                                app:endIconContentDescription="@string/account_toggle_password_desc"
+                                app:endIconDrawable="@drawable/ic_visibility"
+                                app:endIconMode="custom">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="textPassword"
+                                    android:maxLength="20"
+                                    android:text="@={vm.newPassword}"
+                                    app:accountPasswordVisible="@{vm.newPasswordVisible}" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <include
+                                layout="@layout/view_account_password_strength"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                app:level="@{vm.strengthLevel}" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/recover_confirm_layout"
+                                style="@style/Widget.Account.TextInputLayout"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:hint="@string/account_confirm_new_password"
+                                app:accountEyeOpen="@{vm.confirmVisible}"
+                                app:accountHelper="@{vm.confirmHint}"
+                                app:accountHelperError="@{vm.confirmHintError}"
+                                app:endIconContentDescription="@string/account_toggle_password_desc"
+                                app:endIconDrawable="@drawable/ic_visibility"
+                                app:endIconMode="custom"
+                                app:helperTextTextColor="?attr/colorPrimary">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="textPassword"
+                                    android:maxLength="20"
+                                    android:text="@={vm.confirm}"
+                                    app:accountPasswordVisible="@{vm.confirmVisible}" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- 规则卡（与 A08 共用，不含「与最近使用过的密码不同」） -->
+                            <include
+                                layout="@layout/view_account_password_rules"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="24dp"
+                                app:lengthState="@{vm.ruleLength ? 1 : 0}"
+                                app:mixState="@{vm.ruleMix ? 1 : 0}"
+                                app:recentState="@{0}"
+                                app:showRecent="@{false}" />
+                        </LinearLayout>
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.Pest.Button"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/pest_button_height_form"
+                                android:enabled="@{vm.canSubmit}"
+                                android:onClick="@{() -> vm.submit()}"
+                                android:text="@{vm.submitting ? `` : @string/account_recover_submit}" />
+
+                            <com.google.android.material.progressindicator.CircularProgressIndicator
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:elevation="8dp"
+                                android:indeterminate="true"
+                                app:indicatorColor="?attr/colorOnSurfaceVariant"
+                                app:indicatorSize="24dp"
+                                app:trackThickness="3dp"
+                                app:visible="@{vm.submitting}" />
+                        </FrameLayout>
+                    </LinearLayout>
+
+                    <!-- ========== 无法验证身份 ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        app:visible="@{vm.step == 4}"
+                        tools:visibility="gone">
+
+                        <FrameLayout
+                            android:layout_width="88dp"
+                            android:layout_height="88dp"
+                            android:layout_marginTop="32dp"
+                            android:background="@drawable/pest_bg_circle"
+                            android:backgroundTint="?attr/colorWarningContainer">
+
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_shield"
+                                app:tint="?attr/colorOnWarningContainer" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:text="@string/account_unverifiable_title"
+                            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="center"
+                            android:maxWidth="320dp"
+                            android:text="@string/account_unverifiable_desc"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <!-- 两条建议：surfaceContainerLow 卡片 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:background="@drawable/pest_bg_card"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_smartphone"
+                                    app:tint="?attr/colorPrimary" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/account_unverifiable_tip_phone"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurface" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_person"
+                                    app:tint="?attr/colorPrimary" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/account_unverifiable_tip_register"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurface" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            style="@style/Widget.Pest.Button"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/pest_button_height_form"
+                            android:layout_marginTop="32dp"
+                            android:text="@string/account_register_with_new_phone"
+                            app:onSafeClick="@{() -> vm.goRegister()}" />
+
+                        <com.google.android.material.button.MaterialButton
+                            style="@style/Widget.Pest.Button.Text"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/pest_button_height"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/account_back_to_login"
+                            app:onSafeClick="@{() -> vm.goLogin()}" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </LinearLayout>
+
+        <!-- ========== 成功态：顶栏隐藏，整页居中（与 A08 / A10 一致） ========== -->
+        <LinearLayout
+            android:id="@+id/recover_success"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/pest_form_margin"
+            android:paddingEnd="@dimen/pest_form_margin"
+            android:paddingBottom="24dp"
+            app:visible="@{vm.step == 3}"
+            tools:visibility="gone">
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <FrameLayout
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:background="@drawable/pest_bg_circle"
+                android:backgroundTint="?attr/colorPrimaryContainer">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_check_circle"
+                    app:tint="?attr/colorOnPrimaryContainer" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/account_recover_success_title"
+                android:textAppearance="?attr/textAppearanceHeadlineMedium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:maxWidth="320dp"
+                android:text="@{vm.successDesc}"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="今后请使用 139****1111 登录，已为你自动登录" />
+
+            <!-- 恢复码方式：提示重新生成 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/pest_bg_card_12"
+                android:backgroundTint="?attr/colorSecondaryContainer"
+                android:gravity="center"
+                android:maxWidth="320dp"
+                android:paddingStart="16dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="12dp"
+                android:text="@string/account_recover_code_used"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSecondaryContainer"
+                app:visible="@{vm.recoveryCodeUsed}" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1.4" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recover_go_home"
+                style="@style/Widget.Pest.Button"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/pest_button_height_form"
+                android:text="@string/account_go_home"
+                app:onSafeClick="@{() -> vm.goMain()}" />
+        </LinearLayout>
+    </FrameLayout>
+</layout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S02 扫描线：中间 3dp #AAD291 实线（圆角 2dp），上下各 12dp 同色光晕 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:centerColor="@color/scan_line_glow"
+                android:endColor="@color/scan_line_glow_edge"
+                android:startColor="@color/scan_line_glow_edge" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item
+        android:height="3dp"
+        android:gravity="center_vertical|fill_horizontal">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/scan_line" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+</layer-list>

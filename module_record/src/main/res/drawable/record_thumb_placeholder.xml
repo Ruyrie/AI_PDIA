@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    缩略图占位图 / 错误图：48dp 的 surfaceContainerHighest 底 + 24dp image 图标（outline 色）。
+    整体固有尺寸为 48dp，ImageView 使用 centerCrop 时图标保持 24dp 不被放大。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="@dimen/record_thumb_size"
+        android:height="@dimen/record_thumb_size">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorSurfaceContainerHighest" />
+        </shape>
+    </item>
+    <item
+        android:width="24dp"
+        android:height="24dp"
+        android:gravity="center"
+        android:drawable="@drawable/record_ic_image_outline" />
+</layer-list>

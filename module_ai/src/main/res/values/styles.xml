@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- module_ai 样式（Widget.Ai.* 前缀） -->
+<resources>
+
+    <!-- Q01 提问模板 Chip：高 32dp，圆角 8dp，透明底 + 1dp outlineVariant 描边，LabelLarge onSurfaceVariant -->
+    <style name="Widget.Ai.Chip.Template" parent="Widget.Material3.Chip.Suggestion">
+        <item name="chipMinHeight">32dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Pest.Small</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pest.LabelLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipBackgroundColor">@android:color/transparent</item>
+    </style>
+</resources>
