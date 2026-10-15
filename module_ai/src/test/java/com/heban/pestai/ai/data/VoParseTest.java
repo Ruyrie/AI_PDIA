@@ -13,7 +13,6 @@ import com.heban.pestai.common.vo.ChatMessageVO;
 import com.heban.pestai.common.vo.SessionDetailVO;
 import com.heban.pestai.common.vo.SessionItemVO;
 import com.heban.pestai.common.vo.SessionVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 import com.heban.pestai.common.vo.UploadVO;
 import com.heban.pestai.network.ApiResponse;
 import com.heban.pestai.network.PageVO;
@@ -21,6 +20,8 @@ import com.heban.pestai.network.PageVO;
 import org.junit.Test;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** 与 NetworkModule 相同的 Gson 配置：下划线字段能正确映射 */
@@ -49,30 +50,60 @@ public class VoParseTest {
     }
 
     @Test
+    public void asrVO_insideApiResponse() {
+        Type type = new TypeToken<ApiResponse<AsrVO>>() { }.getType();
+        ApiResponse<AsrVO> response = gson.fromJson(
+                "{\"code\":0,\"message\":\"ok\",\"data\":{\"text\":\"番茄叶子发黄怎么办\"}}", type);
+        assertTrue(response.isSuccess());
+        assertEquals("番茄叶子发黄怎么办", response.getData().getText());
+
+        ApiResponse<AsrVO> notHeard = gson.fromJson(
+                "{\"code\":40001,\"message\":\"没有听清，请再说一遍\",\"data\":null}", type);
+        assertFalse(notHeard.isSuccess());
+        assertEquals(40001, notHeard.getCode());
+        assertEquals("没有听清，请再说一遍", notHeard.getMessage());
+        assertNull(notHeard.getData());
+    }
+
+    @Test
     public void uploadVO() {
         UploadVO vo = gson.fromJson("{\"url\":\"http://x/files/chat/20261013/8f2c.jpg\"}", UploadVO.class);
         assertEquals("http://x/files/chat/20261013/8f2c.jpg", vo.getUrl());
     }
 
     @Test
-    public void suggestionList() {
-        Type type = new TypeToken<ApiResponse<List<SuggestionVO>>>() {
-        }.getType();
-        ApiResponse<List<SuggestionVO>> response = gson.fromJson(
-                "{\"code\":0,\"message\":\"ok\",\"data\":[{\"id\":1,\"text\":\"番茄叶片发黄卷曲是什么原因？\"}]}", type);
-        assertTrue(response.isSuccess());
-        assertEquals(1, response.getData().size());
-        assertEquals(1, response.getData().get(0).getId());
-        assertEquals("番茄叶片发黄卷曲是什么原因？", response.getData().get(0).getText());
+    public void sendMessageReq_serializesSnakeCase_andSkipsEmptyImages() {
+        String json = gson.toJson(new SendMessageReq("这个病怎么处理？", Collections.emptyList(), false));
+        assertEquals("{\"content\":\"这个病怎么处理？\",\"regenerate\":false}", json);
+        assertEquals(json, gson.toJson(new SendMessageReq("这个病怎么处理？", null, false)));
     }
 
     @Test
-    public void sendMessageReq_serializesSnakeCase_andSkipsNullImage() {
-        String json = gson.toJson(new SendMessageReq("这个病怎么处理？", null, false));
-        assertEquals("{\"content\":\"这个病怎么处理？\",\"regenerate\":false}", json);
-        String withImage = gson.toJson(new SendMessageReq("看图", "http://x/a.jpg", true));
-        assertTrue(withImage.contains("\"image_url\":\"http://x/a.jpg\""));
-        assertTrue(withImage.contains("\"regenerate\":true"));
+    public void sendMessageReq_imageUrls_inOrder_withoutLegacyField() {
+        String json = gson.toJson(new SendMessageReq("", Arrays.asList("http://x/a.jpg", "http://x/b.jpg"), true));
+        assertEquals("{\"content\":\"\",\"image_urls\":[\"http://x/a.jpg\",\"http://x/b.jpg\"],"
+                + "\"regenerate\":true}", json);
+        assertFalse("不再发送 image_url", json.contains("\"image_url\""));
+    }
+
+    @Test
+    public void chatMessageVO_imageUrls() {
+        ChatMessageVO vo = gson.fromJson("{\"role\":\"user\",\"content\":\"\","
+                + "\"image_url\":\"http://x/a.jpg\",\"image_urls\":[\"http://x/a.jpg\",\"http://x/b.jpg\"],"
+                + "\"created_at\":\"2026-10-14 09:00:00\"}", ChatMessageVO.class);
+        assertEquals("", vo.getContent());
+        assertEquals("http://x/a.jpg", vo.getImageUrl());
+        assertEquals(Arrays.asList("http://x/a.jpg", "http://x/b.jpg"), vo.getImageUrls());
+
+        ChatMessageVO none = gson.fromJson("{\"role\":\"user\",\"content\":\"蚜虫怎么防？\","
+                + "\"image_url\":null,\"image_urls\":[]}", ChatMessageVO.class);
+        assertTrue(none.getImageUrls().isEmpty());
+        assertNull(none.getImageUrl());
+
+        ChatMessageVO legacy = gson.fromJson("{\"role\":\"user\",\"content\":\"看图\","
+                + "\"image_url\":\"http://x/a.jpg\"}", ChatMessageVO.class);
+        assertNull("旧服务器没有 image_urls", legacy.getImageUrls());
+        assertEquals("http://x/a.jpg", legacy.getImageUrl());
     }
 
     @Test

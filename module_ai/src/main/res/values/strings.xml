@@ -6,41 +6,50 @@
     <string name="ai_new_chat">新对话</string>
     <string name="ai_history">历史对话</string>
 
-    <!-- Q01 -->
-    <string name="ai_welcome_title">你好，我是 AI 植保助手</string>
-    <string name="ai_welcome_desc">描述作物的症状、拍张照片，或者接着识别结果继续问，我来帮你分析原因和处理办法</string>
-    <string name="ai_cap_text_title">文字提问</string>
-    <string name="ai_cap_text_desc">描述症状和发生部位</string>
-    <string name="ai_cap_image_title">带图提问</string>
-    <string name="ai_cap_image_desc">附上照片看得更准</string>
-    <string name="ai_cap_follow_title">追问结果</string>
-    <string name="ai_cap_follow_desc">接着识别结果问</string>
-    <string name="ai_continue_ask">继续追问</string>
-    <string name="ai_suggestions_title">大家常问</string>
+    <!-- Q01 新对话 -->
+    <string name="ai_welcome_title">有什么种植问题？</string>
+    <string name="ai_model_notice">内容由大模型生成，仅供参考</string>
     <string name="ai_input_hint">描述作物问题…</string>
     <string name="ai_input_hint_image">描述这张照片的问题…</string>
-    <string name="ai_latest_thumb">最近识别的照片</string>
+    <string name="ai_input_hint_images">描述这些照片的问题…</string>
 
-    <!-- Q01 带图提问 / 追问结果 -->
-    <string name="ai_source_camera">拍照</string>
-    <string name="ai_source_album">从相册选择</string>
+    <!-- 输入栏（Q01 / Q02 共用） -->
+    <string name="ai_composer_camera">拍照</string>
+    <string name="ai_composer_album">从相册选择</string>
     <string name="ai_camera_denied">需要相机权限才能拍照，也可以从相册选择</string>
     <string name="ai_camera_unavailable">无法打开相机，请从相册选择</string>
-    <string name="ai_picker_title">选择要追问的识别记录</string>
-    <string name="ai_picker_empty">还没有识别记录</string>
-    <string name="ai_picker_go_scan">去拍照识别</string>
-
-    <!-- 输入栏 -->
-    <string name="ai_pick_image">添加图片</string>
-    <string name="ai_pending_image">待发送的图片</string>
-    <string name="ai_remove_image">移除图片</string>
+    <string name="ai_album_unavailable">无法打开相册</string>
+    <string name="ai_queue_image">第 %1$d 张图片</string>
+    <string name="ai_queue_remove">移除第 %1$d 张图片</string>
+    <string name="ai_queue_state_uploading">正在上传</string>
+    <string name="ai_queue_state_failed">上传失败，点按重试</string>
     <string name="ai_send">发送</string>
     <string name="ai_stop">停止生成</string>
+
+    <!-- 输入栏语音输入：文字 / 语音两种输入方式（麦克风与键盘图标在同一位置切换），语音模式下按住「按住 说话」录音 -->
+    <string name="ai_composer_voice_mode">切换到语音输入</string>
+    <string name="ai_composer_keyboard_mode">切换到键盘输入</string>
+    <string name="ai_voice_talk">按住 说话</string>
+    <string name="ai_voice_talk_release">松开 识别</string>
+    <!-- 录音浮层提示；「松开 取消」「识别中…」同时用作按钮文字 -->
+    <string name="ai_voice_hint">松开 识别 · 上滑 取消</string>
+    <string name="ai_voice_hint_cancel">松开 取消</string>
+    <string name="ai_voice_hint_toggle">再次点按 结束并识别</string>
+    <string name="ai_voice_countdown">还能说 %1$d 秒</string>
+    <string name="ai_voice_recognizing">识别中…</string>
+    <!-- 开启 TalkBack 时：点按开始 / 再次点按结束（无障碍操作名称与播报；「结束并识别」同时是录音中的按钮文字） -->
+    <string name="ai_voice_action_start">开始语音输入</string>
+    <string name="ai_voice_action_stop">结束并识别</string>
+    <string name="ai_voice_a11y_started">正在录音，说完后再次点按结束并识别</string>
+    <string name="ai_voice_a11y_recognizing">正在识别</string>
+    <string name="ai_voice_a11y_done">已填入识别结果</string>
+    <string name="ai_voice_a11y_cancelled">已取消语音输入</string>
 
     <!-- Q02 -->
     <string name="ai_chat_input_hint">继续追问…</string>
     <string name="ai_quote_label">识别结果</string>
     <string name="ai_photo">照片</string>
+    <string name="ai_photo_index">第 %1$d 张照片</string>
     <string name="ai_avatar">AI 植保助手</string>
     <string name="ai_copy">复制</string>
     <string name="ai_regenerate">重新生成</string>
@@ -49,10 +58,15 @@
     <string name="ai_notice_broken">回答中断，点按重试</string>
     <string name="ai_notice_unavailable">AI 服务暂不可用，请稍后再试</string>
     <string name="ai_notice_empty">AI 暂时没有给出回答，请换个问法试试</string>
-    <string name="ai_image_retry">图片上传失败，点按重试</string>
     <string name="ai_scroll_bottom">回到底部</string>
     <string name="ai_reasoning_expand">展开思考过程</string>
     <string name="ai_reasoning_collapse">收起思考过程</string>
+
+    <!-- 图片全屏预览 -->
+    <string name="ai_preview_close">关闭</string>
+    <string name="ai_preview_counter">%1$d/%2$d</string>
+    <string name="ai_preview_image">第 %1$d 张图片，共 %2$d 张</string>
+    <string name="ai_preview_failed">图片加载失败</string>
 
     <!-- Q03 历史对话 -->
     <string name="ai_history_title">历史对话</string>

@@ -22,7 +22,10 @@ public class FileController {
         this.fileStorageService = fileStorageService;
     }
 
-    /** POST files/image（multipart，字段 image）：保存到 chat 目录，不写数据库 */
+    /**
+     * POST files/image（multipart，字段 image）：保存到 chat 目录，不写数据库（App 选图后立即上传，一次一张）；
+     * 上传日期两天后仍未被任何消息引用的图片由 ChatImageJanitor 定期删除
+     */
     @PostMapping("image")
     public ApiResponse<UploadVO> uploadImage(@RequestPart("image") MultipartFile image) {
         UserContext.requireUserId();

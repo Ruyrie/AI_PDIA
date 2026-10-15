@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.admin.mapper.AdminUserMapper">
+
+    <!--
+        用户行：界面字段 + 是否已生成恢复码（不读出哈希）+ 识别次数（含已删除，走 idx_user_deleted_created 的 user_id 前缀）
+        + AI 提问次数（会话走 idx_user_created，消息走 idx_session_created）。相关子查询只为当前页的行计算
+    -->
+    <sql id="rowColumns">
+        u.id, u.phone, u.nickname, u.avatar_url, u.region, u.`identity`, u.crops, u.`status`,
+        u.created_at, u.last_login_at, u.sms_verified_at,
+        (u.recovery_code_hash IS NOT NULL AND u.recovery_code_hash &lt;&gt; '') AS recovery_code_generated,
+        (SELECT COUNT(*) FROM t_recognition r WHERE r.user_id = u.id) AS recognition_count,
+        (SELECT COUNT(*)
+         FROM t_ai_message m
+         JOIN t_ai_session s ON m.session_id = s.id
+         WHERE s.user_id = u.id AND m.`role` = 'user') AS ai_question_count
+    </sql>
+
+    <sql id="userWhere">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (u.phone LIKE CONCAT('%', #{keyword}, '%') OR u.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">AND u.`status` = #{status}</if>
+        </where>
+    </sql>
+
+    <select id="countUsers" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user u
+        <include refid="userWhere"/>
+    </select>
+
+    <!-- 先按主键倒序分页取 id，再只为这一页计算计数 -->
+    <select id="selectUserPage" resultType="com.heban.pestai.server.admin.entity.AdminUserRow">
+        SELECT <include refid="rowColumns"/>
+        FROM (
+            SELECT u.id
+            FROM t_user u
+            <include refid="userWhere"/>
+            ORDER BY u.id DESC
+            LIMIT #{offset}, #{size}
+        ) p
+        JOIN t_user u ON u.id = p.id
+        ORDER BY u.id DESC
+    </select>
+
+    <select id="selectUserRow" resultType="com.heban.pestai.server.admin.entity.AdminUserRow">
+        SELECT <include refid="rowColumns"/>
+        FROM t_user u
+        WHERE u.id = #{id}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE t_user
+        SET `status` = #{status},
+            <if test="bumpTokenVersion">token_version = token_version + 1,</if>
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <!-- identity：清除 → NULL（未设置，迁移 006 起该列可空）/ 给出 → 更新 / 未给出 → 不改；crops：给出（含清空）→ 更新 / 未给出 → 不改 -->
+    <update id="updateProfile">
+        UPDATE t_user
+        SET nickname = #{nickname},
+            <choose>
+                <when test="clearIdentity">`identity` = NULL,</when>
+                <when test="identity != null">`identity` = #{identity},</when>
+            </choose>
+            <if test="updateCrops">crops = #{crops},</if>
+            <if test="clearAvatar">avatar_url = NULL,</if>
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <select id="countRecognitions" resultType="long">
+        SELECT COUNT(*) FROM t_recognition WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectRecognitionPage" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT id, user_id, `mode`, image_url, `status`, top_name, confidence, severity, fail_reason, model, fallback,
+               deleted, created_at
+        FROM t_recognition
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectRecognitionFile" resultType="com.heban.pestai.server.entity.Recognition">
+        SELECT id, user_id, image_url, deleted
+        FROM t_recognition
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteRecognition">
+        DELETE FROM t_recognition WHERE id = #{id}
+    </delete>
+</mapper>

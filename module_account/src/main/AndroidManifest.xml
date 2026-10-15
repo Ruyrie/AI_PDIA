@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- A06 完善资料 / 编辑资料「拍照」换头像：启动系统相机前需要已授权（合并清单中声明了 CAMERA 时系统相机会校验）；
+         没有摄像头的设备也能安装，可从相册选择 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application>
 
         <!-- A01 闪屏：整个 App 的启动入口 -->
@@ -50,7 +58,7 @@
             </intent-filter>
         </activity>
 
-        <!-- A06 完善资料 -->
+        <!-- A06 完善资料；Intent 参数 RouterPath.EXTRA_PROFILE_MODE = PROFILE_MODE_EDIT 时为编辑资料（M01 我的进入） -->
         <activity
             android:name=".ui.profile.ProfileSetupActivity"
             android:exported="false"
@@ -126,6 +134,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!-- A06 拍照换头像：系统相机把照片写入 cacheDir/account_camera/（authority 带 .account 前缀，避免与其他组件冲突） -->
+        <provider
+            android:name=".util.AccountFileProvider"
+            android:authorities="${applicationId}.account.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/account_file_paths" />
+        </provider>
     </application>
 
 </manifest>

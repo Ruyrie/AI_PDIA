@@ -15,6 +15,7 @@ import com.heban.pestai.server.common.Mode;
 import com.heban.pestai.server.config.PestaiProperties;
 import com.heban.pestai.server.service.ParsedVision;
 import com.heban.pestai.server.service.VisionResultParser;
+import com.heban.pestai.server.vo.CandidateVO;
 
 class MockClientsTest {
 
@@ -28,26 +29,72 @@ class MockClientsTest {
 
     @Test
     void everyMockSamplePassesTheRealParser() throws Exception {
+        List<CandidateVO> others = new ArrayList<>();
         for (String sample : MockVisionClient.PEST_SAMPLES) {
             ParsedVision p = VisionResultParser.parse(sample, Mode.PEST);
             assertThat(p.isSuccess()).isTrue();
             assertThat(p.severity()).isNotNull();
+            others.addAll(p.others());
         }
         for (String sample : MockVisionClient.CROP_SAMPLES) {
             ParsedVision p = VisionResultParser.parse(sample, Mode.CROP);
             assertThat(p.isSuccess()).isTrue();
             assertThat(p.severity()).isNull();
+            others.addAll(p.others());
         }
         assertThat(VisionResultParser.parse(MockVisionClient.IMAGE_BAD, Mode.PEST).isSuccess()).isFalse();
+
+        // 「其他可能」与提示词要求一致：都有 reason、difference，且各不超过 40 字
+        assertThat(others).hasSizeGreaterThan(5);
+        for (CandidateVO c : others) {
+            assertThat(c.reason()).as(c.name()).isNotBlank();
+            assertThat(c.difference()).as(c.name()).isNotBlank();
+            assertThat(c.reason().codePointCount(0, c.reason().length())).as(c.name()).isLessThanOrEqualTo(40);
+            assertThat(c.difference().codePointCount(0, c.difference().length())).as(c.name()).isLessThanOrEqualTo(40);
+        }
+    }
+
+    @Test
+    void visionInstructionAddsCropHintOnlyWhenUserHasCrops() {
+        assertThat(VisionPrompts.userInstruction(null)).isEqualTo(VisionPrompts.USER_INSTRUCTION);
+        assertThat(VisionPrompts.userInstruction(List.of())).isEqualTo(VisionPrompts.USER_INSTRUCTION);
+
+        String withCrops = VisionPrompts.userInstruction(List.of("番茄", "黄瓜", "小麦"));
+        assertThat(withCrops).isEqualTo("请识别这张照片，严格按要求只返回一个 JSON 对象。\n"
+                + "参考信息：该用户主要种植番茄、黄瓜、小麦。仅当照片中的作物种类难以判断时参考；"
+                + "照片能明确看出作物时以照片为准，不要因为这条信息改变判断。");
+        // 只多一行：第一行仍是要求只返回 JSON 的指令
+        assertThat(withCrops.lines().toList()).hasSize(2).first().isEqualTo(VisionPrompts.USER_INSTRUCTION);
+        // 系统提示（JSON 输出约定）与作物无关，PEST、CROP 各自不变
+        assertThat(VisionPrompts.systemPrompt(Mode.PEST)).doesNotContain("参考信息");
+        assertThat(VisionPrompts.systemPrompt(Mode.CROP)).doesNotContain("参考信息");
+    }
+
+    @Test
+    void promptExamplesIncludeReasonAndDifferenceForOthers() throws Exception {
+        for (String mode : List.of(Mode.PEST, Mode.CROP)) {
+            String prompt = VisionPrompts.systemPrompt(mode);
+            assertThat(prompt).contains("reason（为什么可能是它").contains("difference（与 top_name 的区别");
+            // 提示词中的 JSON 示例本身也能通过解析，且每条「其他可能」都带说明
+            String example = prompt.lines().filter(l -> l.startsWith("{\"status\":\"SUCCESS\"")).findFirst().orElseThrow();
+            ParsedVision p = VisionResultParser.parse(example, mode);
+            assertThat(p.others()).isNotEmpty().allSatisfy(c -> {
+                assertThat(c.reason()).isNotBlank();
+                assertThat(c.difference()).isNotBlank();
+            });
+        }
     }
 
     @Test
     void sameImageAlwaysGivesSameResult() throws Exception {
         MockVisionClient client = new MockVisionClient(mock(0));
         byte[] image = "pretend-jpeg-bytes".getBytes(StandardCharsets.UTF_8);
-        String first = client.recognize(image, "image/jpeg", Mode.PEST, Duration.ofSeconds(25));
-        String second = client.recognize(image, "image/jpeg", Mode.PEST, Duration.ofSeconds(25));
+        String first = client.recognize(image, "image/jpeg", Mode.PEST, List.of(), Duration.ofSeconds(25));
+        String second = client.recognize(image, "image/jpeg", Mode.PEST, List.of(), Duration.ofSeconds(25));
         assertThat(first).isEqualTo(second);
+        // Mock 不使用作物参考信息
+        assertThat(client.recognize(image, "image/jpeg", Mode.PEST, List.of("小麦"), Duration.ofSeconds(25)))
+                .isEqualTo(first);
         assertThat(MockVisionClient.PEST_SAMPLES).contains(first);
         assertThat(client.isMock()).isTrue();
     }
@@ -57,7 +104,7 @@ class MockClientsTest {
         MockVisionClient client = new MockVisionClient(mock(0));
         List<String> results = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            results.add(client.recognize(("img-" + i).getBytes(StandardCharsets.UTF_8), "image/jpeg", Mode.CROP,
+            results.add(client.recognize(("img-" + i).getBytes(StandardCharsets.UTF_8), "image/jpeg", Mode.CROP, List.of(),
                     Duration.ofSeconds(25)));
         }
         assertThat(results.stream().distinct().count()).isGreaterThan(1);
@@ -67,7 +114,7 @@ class MockClientsTest {
     @Test
     void imageBadPercentControlsSimulatedBlurryPhotos() throws Exception {
         MockVisionClient alwaysBad = new MockVisionClient(mock(100));
-        assertThat(alwaysBad.recognize(new byte[]{1, 2, 3}, "image/jpeg", Mode.PEST, Duration.ofSeconds(25)))
+        assertThat(alwaysBad.recognize(new byte[]{1, 2, 3}, "image/jpeg", Mode.PEST, List.of(), Duration.ofSeconds(25)))
                 .isEqualTo(MockVisionClient.IMAGE_BAD);
     }
 
@@ -76,7 +123,7 @@ class MockClientsTest {
         PestaiProperties.Mock slow = mock(0);
         slow.setVisionDelayMs(5_000);
         MockVisionClient client = new MockVisionClient(slow);
-        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, Duration.ofMillis(10)))
+        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, List.of(), Duration.ofMillis(10)))
                 .isInstanceOf(VisionException.class)
                 .extracting(e -> ((VisionException) e).getReason())
                 .isEqualTo(VisionException.Reason.TIMEOUT);

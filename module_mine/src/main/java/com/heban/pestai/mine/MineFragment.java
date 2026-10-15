@@ -26,6 +26,8 @@ import com.heban.pestai.mine.ui.MineViewModel;
  *     <li>顶部状态栏间距由 MainActivity 统一处理，这里不再添加。</li>
  *     <li>隐藏的 Tab 生命周期停在 STARTED，onResume() 只在可见时回调；记录 / 资料变化只标记 dirty，可见时再刷新。</li>
  *     <li>「AI 问答」通过 Activity 作用域的 MainViewModel 切换 Tab，不引用壳工程类。</li>
+ *     <li>点资料区（头像、昵称、手机号）：已登录打开 A06 编辑资料（RouterPath.PROFILE_SETUP + EXTRA_PROFILE_MODE = edit），
+ *     保存后 userChanges() 带回新资料；游客打开登录页。</li>
  *     <li>资料区下方「你还没有保存账号恢复码」提醒卡片：每次可见时刷新，「去生成」打开 A12（RouterPath.RECOVERY_CODE）。</li>
  * </ul>
  */
@@ -125,6 +127,10 @@ public class MineFragment extends BaseFragment {
                 break;
             case GO_LOGIN:
                 MineUi.open(requireContext(), RouterPath.LOGIN);
+                break;
+            case GO_EDIT_PROFILE:
+                MineUi.start(requireContext(), RouterPath.intent(requireContext(), RouterPath.PROFILE_SETUP)
+                        .putExtra(RouterPath.EXTRA_PROFILE_MODE, RouterPath.PROFILE_MODE_EDIT));
                 break;
             case GO_RECOVERY_CODE:
                 MineUi.open(requireContext(), RouterPath.RECOVERY_CODE);

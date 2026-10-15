@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.admin.mapper.AdminMapper">
+
+    <sql id="allColumns">
+        id, username, password_hash, must_change_password, failed_attempts, locked_until,
+        last_login_at, last_login_ip, created_at, updated_at
+    </sql>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM t_admin
+    </select>
+
+    <select id="selectById" resultType="com.heban.pestai.server.admin.entity.Admin">
+        SELECT <include refid="allColumns"/>
+        FROM t_admin
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" resultType="com.heban.pestai.server.admin.entity.Admin">
+        SELECT <include refid="allColumns"/>
+        FROM t_admin
+        WHERE username = #{username}
+    </select>
+
+    <insert id="insert" parameterType="com.heban.pestai.server.admin.entity.Admin"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_admin (username, password_hash, must_change_password, failed_attempts, created_at, updated_at)
+        VALUES (#{username}, #{passwordHash}, #{mustChangePassword}, 0, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <!--
+        MySQL 单表 UPDATE 的 SET 从左到右求值，后面的表达式读到的是前面已赋的新值：
+        先按「旧的失败次数 + 1」决定是否锁定，再更新失败次数（锁定时清零）
+    -->
+    <update id="recordFailure">
+        UPDATE t_admin
+        SET locked_until = CASE WHEN failed_attempts + 1 &gt;= #{threshold} THEN #{lockUntil} ELSE locked_until END,
+            failed_attempts = CASE WHEN failed_attempts + 1 &gt;= #{threshold} THEN 0 ELSE failed_attempts + 1 END,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="recordSuccess">
+        UPDATE t_admin
+        SET failed_attempts = 0,
+            locked_until = NULL,
+            last_login_at = #{now},
+            last_login_ip = #{ip},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE t_admin
+        SET password_hash = #{passwordHash},
+            must_change_password = 0,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+</mapper>

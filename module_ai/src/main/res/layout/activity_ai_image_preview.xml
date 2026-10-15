@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 图片全屏预览（Theme.Pest.Camera 深色主题）：黑底、Edge-to-Edge，图片铺满全屏左右翻页；
+     顶部栏（避开状态栏）：左侧关闭 ✕（48dp），居中「3/9」（只有 1 张时隐藏），下方渐变遮罩保证可读 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/ai_preview_pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <FrameLayout
+        android:id="@+id/ai_preview_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ai_bg_preview_top">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pest_toolbar_height"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageButton
+                android:id="@+id/ai_preview_close"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="start|center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_preview_close"
+                android:src="@drawable/ic_close"
+                app:tint="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/ai_preview_counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface" />
+        </FrameLayout>
+    </FrameLayout>
+</FrameLayout>

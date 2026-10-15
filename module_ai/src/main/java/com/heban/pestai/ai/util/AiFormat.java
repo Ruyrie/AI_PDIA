@@ -3,7 +3,6 @@ package com.heban.pestai.ai.util;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.heban.pestai.common.constant.Mode;
 import com.heban.pestai.common.format.TimeFormatter;
 import com.heban.pestai.common.vo.RecordItemVO;
 
@@ -14,8 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * 模块08 的显示格式化（纯 Java，便于单元测试）：匹配度百分比、最近识别卡与引用卡文字、
- * 「选择要追问的识别记录」列表文字、历史对话时间、问题截断。
+ * 模块08 的显示格式化（纯 Java，便于单元测试）：匹配度百分比、引用卡文字、历史对话时间、问题截断。
  */
 public final class AiFormat {
 
@@ -38,21 +36,6 @@ public final class AiFormat {
         return Math.round(confidence * 100) + "%";
     }
 
-    /** 「最近识别 · 今天 14:20」 */
-    @NonNull
-    public static String latestLabel(@NonNull RecordItemVO record, @NonNull LocalDateTime now) {
-        String time = TimeFormatter.formatRecent(record.getCreatedAt(), now);
-        return time.isEmpty() ? "最近识别" : "最近识别" + SEPARATOR + time;
-    }
-
-    /** 「黄瓜霜霉病 · 匹配度 92%」 */
-    @NonNull
-    public static String latestTitle(@NonNull RecordItemVO record) {
-        String name = nameOf(record);
-        String percent = percent(record.getConfidence());
-        return percent.isEmpty() ? name : name + SEPARATOR + "匹配度 " + percent;
-    }
-
     /** 引用卡「黄瓜霜霉病 · 92% · 中度」，缺少的部分省略 */
     @NonNull
     public static String quoteTitle(@NonNull RecordItemVO record) {
@@ -64,23 +47,6 @@ public final class AiFormat {
         if (!isBlank(record.getSeverity())) {
             sb.append(SEPARATOR).append(record.getSeverity().trim());
         }
-        return sb.toString();
-    }
-
-    /** 识别记录选择列表的名称：最可能结果，为空时「识别结果」 */
-    @NonNull
-    public static String recordName(@NonNull RecordItemVO record) {
-        return nameOf(record);
-    }
-
-    /** 识别记录选择列表的第二行「病虫害 · 匹配度 92% · 今天 14:20」，缺少的部分省略 */
-    @NonNull
-    public static String recordSubtitle(@NonNull RecordItemVO record, @NonNull LocalDateTime now) {
-        StringBuilder sb = new StringBuilder();
-        appendPart(sb, Mode.text(record.getMode()));
-        String percent = percent(record.getConfidence());
-        appendPart(sb, percent.isEmpty() ? null : "匹配度 " + percent);
-        appendPart(sb, TimeFormatter.formatRecent(record.getCreatedAt(), now));
         return sb.toString();
     }
 
@@ -106,16 +72,6 @@ public final class AiFormat {
             return MD.format(local);
         }
         return YMD.format(local);
-    }
-
-    private static void appendPart(@NonNull StringBuilder sb, @Nullable String part) {
-        if (isBlank(part)) {
-            return;
-        }
-        if (sb.length() > 0) {
-            sb.append(SEPARATOR);
-        }
-        sb.append(part.trim());
     }
 
     @NonNull

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q01 / Q02 共用输入栏（include；宿主传入 app:composer="@{vm}" 与 app:defaultHint，并调用 ComposerBar.setup）。
+     上方：待发送图片缩略图条（最多 9 张，没有图片时隐藏，见 item_ai_pending_image）；
+     下方：圆角胶囊（最小高 52dp，左右边距 16dp，surfaceContainerHigh 底），两种输入方式（像微信）：
+       文字：相机（40dp）· 多行输入框（最多 5 行，无背景）· 麦克风（40dp，切换到语音）·「+」（40dp）· 36dp 圆形发送按钮；
+       语音：相机 ·「按住 说话」（40dp 高，占输入框的位置）· 键盘（40dp，与麦克风同一位置，切换回文字）·「+」· 发送。
+     发送按钮 primary 底、onPrimary 图标，Q02 生成中为停止按钮；按钮贴底对齐。
+     按钮与输入框 /「按住 说话」的显示 / 隐藏、变淡与发送 ↔ 停止由 ComposerBar 按 ComposerButtons 处理
+     （初始为文字：相机、麦克风与「+」显示，发送、键盘与「按住 说话」隐藏）；
+     麦克风 / 键盘的点按由 ComposerBar 设置，「按住 说话」的按住录音与录音浮层由 VoiceInputController 处理（不用数据绑定） -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="composer"
+            type="com.heban.pestai.ai.compose.ImageComposer" />
+
+        <!-- 没有图片时的输入框提示 -->
+        <variable
+            name="defaultHint"
+            type="String" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/ai_composer_queue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:scrollbars="none"
+            app:visible="@{safeUnbox(composer.imageCount) > 0}" />
+
+        <!-- 对齐由 ComposerBar.updatePillGravity() 按行数切换：单行（或语音）垂直居中，换行后贴底 -->
+        <LinearLayout
+            android:id="@+id/ai_composer_pill"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/ai_bg_composer"
+            android:gravity="center_vertical"
+            android:minHeight="52dp"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="6dp">
+
+            <!-- 拍照；已满 9 张时变淡（仍可点，提示「最多只能添加 9 张图片」） -->
+            <ImageButton
+                android:id="@+id/ai_composer_camera"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_composer_camera"
+                android:src="@drawable/ic_photo_camera"
+                app:onSafeClick="@{() -> composer.onCameraClick()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <!-- 文字模式的输入框。单行时高度正好 40dp（行高 24sp + 上下各 8dp，去掉字体内边距），文字与两侧 40dp 图标按钮垂直居中对齐；
+                 多行时向上增高，图标按钮仍贴底。语音模式下隐藏（文字保留，切回文字时再显示） -->
+            <EditText
+                android:id="@+id/ai_composer_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:gravity="center_vertical|start"
+                android:importantForAutofill="no"
+                android:includeFontPadding="false"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="5"
+                android:minHeight="40dp"
+                android:paddingStart="10dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="8dp"
+                android:text="@={composer.inputText}"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                app:aiDefaultHint="@{defaultHint}"
+                app:aiImageHintCount="@{safeUnbox(composer.imageCount)}" />
+
+            <!-- 语音模式：「按住 说话」占输入框的位置（同样 weight 1；40dp 高、圆角 20dp、surfaceContainerHighest 底、titleSmall 居中）。
+                 按住录音时为「松开 识别」（按下加深），上滑到取消区为「松开 取消」（errorContainer），识别中为「识别中…」（不可用）；
+                 开启 TalkBack 时点按开始 / 再次点按结束。文字、状态与触摸由 VoiceInputController 设置 -->
+            <TextView
+                android:id="@+id/ai_composer_talk"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/ai_bg_talk"
+                android:focusable="true"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/ai_voice_talk"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="@color/ai_talk_text"
+                android:visibility="gone" />
+
+            <!-- 文字模式：麦克风（点按切换到语音；第一次先申请麦克风权限）。点按由 ComposerBar 设置 -->
+            <ImageButton
+                android:id="@+id/ai_composer_mic"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_composer_voice_mode"
+                android:src="@drawable/ai_ic_mic"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <!-- 语音模式：键盘（与麦克风同一位置，点按切换回文字并弹出键盘）。点按由 ComposerBar 设置 -->
+            <ImageButton
+                android:id="@+id/ai_composer_keyboard"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_composer_keyboard_mode"
+                android:src="@drawable/ai_ic_keyboard"
+                android:visibility="gone"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <!-- 从相册选择（多选，可选张数 = 9 − 已添加）；已满 9 张时变淡 -->
+            <ImageButton
+                android:id="@+id/ai_composer_album"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ai_composer_album"
+                android:src="@drawable/ic_add"
+                app:onSafeClick="@{() -> composer.onAlbumClick()}"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <!-- 发送 / 停止：36dp（图标 20dp），与 40dp 图标按钮垂直居中对齐（上下各 2dp） -->
+            <ImageButton
+                android:id="@+id/ai_composer_action"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="2dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/ai_bg_send"
+                android:contentDescription="@string/ai_send"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_arrow_upward"
+                android:visibility="gone"
+                app:onSafeClick="@{() -> composer.onActionClick()}"
+                app:tint="@color/ai_send_icon" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

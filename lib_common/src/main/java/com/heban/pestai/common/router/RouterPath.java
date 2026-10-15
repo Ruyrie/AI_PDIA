@@ -90,6 +90,11 @@ public final class RouterPath {
     public static final String EXTRA_TAB = "tab";
     /** String：用户协议页显示的文本类型，取值 AGREEMENT_USER / AGREEMENT_PRIVACY */
     public static final String EXTRA_AGREEMENT_TYPE = "agreement_type";
+    /**
+     * String：A06 资料页的模式。缺省为注册第 2 步「完善资料」（保存 / 跳过后进入 A12 引导）；
+     * 取 PROFILE_MODE_EDIT 时为「编辑资料」（M01 我的 → 修改头像、昵称等，保存后返回）
+     */
+    public static final String EXTRA_PROFILE_MODE = "profile_mode";
 
     // ---------- 参数取值 ----------
     public static final String MODE_PEST = "PEST";
@@ -97,6 +102,8 @@ public final class RouterPath {
     public static final long NO_RECORD = -1L;
     public static final String AGREEMENT_USER = "USER";
     public static final String AGREEMENT_PRIVACY = "PRIVACY";
+    /** EXTRA_PROFILE_MODE 取值：编辑资料 */
+    public static final String PROFILE_MODE_EDIT = "edit";
 
     private RouterPath() {
     }

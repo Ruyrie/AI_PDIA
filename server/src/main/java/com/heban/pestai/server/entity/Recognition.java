@@ -27,7 +27,15 @@ public class Recognition {
     private String othersJson;
     /** TIMEOUT / UNAVAILABLE / IMAGE_BAD */
     private String failReason;
+    /** 识别模型显示名（App 显示「由 xx 识别」，改用备用模型时不变） */
     private String modelName;
+    /**
+     * 实际给出结果的模型名（迁移 007；如 qwen3.8-max、deepseek-flash，Mock 为 mock）：只在成功与照片不清晰时有值，
+     * 失败与迁移前的旧记录为 null。只在后台显示，不返回给 App
+     */
+    private String model;
+    /** 是否由备用模型给出结果（迁移 007，TINYINT(1) NOT NULL DEFAULT 0）；默认 false */
+    private Boolean fallback = Boolean.FALSE;
     private Integer deleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -166,6 +174,22 @@ public class Recognition {
 
     public void setDeleted(Integer deleted) {
         this.deleted = deleted;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public Boolean getFallback() {
+        return fallback;
+    }
+
+    public void setFallback(Boolean fallback) {
+        this.fallback = fallback;
     }
 
     public LocalDateTime getCreatedAt() {

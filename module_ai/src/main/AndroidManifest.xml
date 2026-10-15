@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Q01「带图提问 → 拍照」启动系统相机前需要已授权（合并清单中声明了 CAMERA 时系统相机会校验）；
+    <!-- Q01 / Q02 输入栏「拍照」启动系统相机前需要已授权（合并清单中声明了 CAMERA 时系统相机会校验）；
          没有摄像头的设备也能安装，可从相册选择 -->
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature
         android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!-- Q01 / Q02 输入栏「按住说话」：AudioRecord 录音（16kHz 单声道），第一次按住麦克风时申请；
+         没有麦克风的设备也能安装（只是不能语音输入） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-feature
+        android:name="android.hardware.microphone"
         android:required="false" />
 
     <application>
@@ -26,7 +34,13 @@
             android:name=".history.ChatHistoryActivity"
             android:exported="false" />
 
-        <!-- Q01 拍照：系统相机把照片写入 cacheDir/ai_camera/（authority 带 .ai 前缀，避免与其他组件冲突） -->
+        <!-- 图片全屏预览（输入栏待发送图片、对话中的图片）：只在 module_ai 内部用显式 Intent 打开，黑底深色主题 -->
+        <activity
+            android:name=".preview.ImagePreviewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Pest.Camera" />
+
+        <!-- Q01 / Q02 拍照：系统相机把照片写入 cacheDir/ai_camera/（authority 带 .ai 前缀，避免与其他组件冲突） -->
         <provider
             android:name=".util.AiFileProvider"
             android:authorities="${applicationId}.ai.fileprovider"

@@ -9,7 +9,11 @@ import static org.junit.Assert.assertTrue;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 
 import com.heban.pestai.ai.FakeAiRepository;
+import com.heban.pestai.ai.FakeSharedPreferences;
 import com.heban.pestai.ai.RxSchedulersRule;
+import com.heban.pestai.ai.compose.ComposerButtons;
+import com.heban.pestai.ai.compose.InputModeStore;
+import com.heban.pestai.ai.compose.PendingImage;
 import com.heban.pestai.ai.data.StreamBrokenException;
 import com.heban.pestai.ai.data.StreamChunk;
 import com.heban.pestai.ai.util.AiConstants;
@@ -24,11 +28,17 @@ import com.heban.pestai.network.ApiException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -42,22 +52,37 @@ public class ChatViewModelTest {
     private static final String ANSWER = "从照片看，叶背霉层比上一张更密。";
     private static final String IMAGE_URI = "content://media/picker/0/com.android.providers.media.photopicker/media/1";
     private static final String IMAGE_URL = "http://10.0.2.2:8080/files/chat/20261013/8f2c.jpg";
+    private static final String IMAGE_URI_2 = "content://media/picker/0/com.android.providers.media.photopicker/media/2";
+    private static final String IMAGE_URL_2 = "http://10.0.2.2:8080/files/chat/20261014/9a1d.jpg";
 
     @Rule
     public InstantTaskExecutorRule instantRule = new InstantTaskExecutorRule();
     @Rule
     public RxSchedulersRule rxRule = new RxSchedulersRule();
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     private FakeAiRepository repo;
+    /** 记住的输入方式（Q01 / Q02 共用同一个文件） */
+    private InputModeStore modeStore;
     private ChatViewModel vm;
 
     @Before
     public void setUp() {
         repo = new FakeAiRepository();
-        vm = new ChatViewModel(repo);
+        modeStore = new InputModeStore(new FakeSharedPreferences());
+        vm = new ChatViewModel(repo, modeStore);
         // MediatorLiveData 只有在被观察时才会响应数据源变化
-        vm.getCanSend().observeForever(v -> { });
-        vm.getActionEnabled().observeForever(v -> { });
+        vm.getComposerButtons().observeForever(v -> { });
+    }
+
+    private ComposerButtons buttons() {
+        return vm.getComposerButtons().getValue();
+    }
+
+    /** 点右侧按钮会发送（可点且不是停止按钮） */
+    private boolean canSend() {
+        return buttons().canSend();
     }
 
     private List<ChatMessage> messages() {
@@ -91,7 +116,7 @@ public class ChatViewModelTest {
 
     @Test
     public void initWithQuestion_sendsAndStreamsAnswer() {
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
 
         List<ChatMessage> list = messages();
         assertEquals(2, list.size());
@@ -109,7 +134,7 @@ public class ChatViewModelTest {
         FakeAiRepository.SendCall call = repo.sendCalls.get(0);
         assertEquals(512, call.sessionId);
         assertEquals(QUESTION, call.content);
-        assertNull(call.imageUrl);
+        assertTrue(call.imageUrls.isEmpty());
         assertFalse(call.regenerate);
         assertEquals(Collections.singletonList((Long) null), repo.createSessionRecordIds);
         assertEquals("", vm.getInputText().getValue());
@@ -119,14 +144,14 @@ public class ChatViewModelTest {
     public void chunksAppendToLastAiMessage_andButtonBecomesStop() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
         vm.init(ChatArgs.ofRecord(-1));
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
+        assertFalse(canSend());
         type("番茄叶片发黄卷曲是什么原因？");
-        assertEquals(Boolean.TRUE, vm.getCanSend().getValue());
+        assertTrue(canSend());
 
-        vm.onSendOrStop();
+        vm.onActionClick();
         assertTrue(vm.isStreaming());
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
-        assertEquals("生成中按钮为停止按钮，可点击", Boolean.TRUE, vm.getActionEnabled().getValue());
+        assertFalse(canSend());
+        assertTrue("生成中按钮为停止按钮，可点击", buttons().isActionEnabled());
         assertEquals(2, messages().size());
         assertTrue(last().isStreaming());
         assertEquals("", last().getContent());
@@ -142,7 +167,7 @@ public class ChatViewModelTest {
 
         // 生成中可以输入但不能发送
         type("再问一个");
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
+        assertFalse(canSend());
         vm.send();
         assertEquals(1, repo.sendCalls.size());
 
@@ -150,17 +175,52 @@ public class ChatViewModelTest {
         assertFalse(vm.isStreaming());
         assertFalse(last().isStreaming());
         assertTrue(last().showActions());
-        assertEquals(Boolean.TRUE, vm.getCanSend().getValue());
+        assertTrue(canSend());
+    }
+
+    @Test
+    public void composerButtons_stopShownWhileStreaming_regardlessOfText() {
+        PublishProcessor<StreamChunk> answer = pendingAnswer();
+        vm.init(ChatArgs.ofRecord(-1));
+        assertEquals("空输入：相机与「+」，没有发送按钮", ComposerButtons.EMPTY, buttons());
+        assertFalse(buttons().isActionVisible());
+
+        type(QUESTION);
+        assertFalse(buttons().isCameraVisible());
+        assertFalse(buttons().isAlbumVisible());
+        assertTrue(buttons().isActionVisible());
+        assertFalse(buttons().isStop());
+
+        vm.onActionClick();
+        assertTrue(vm.isStreaming());
+        assertTrue("输入框已清空，生成中仍显示停止按钮", buttons().isActionVisible());
+        assertTrue(buttons().isStop());
+        assertTrue(buttons().isActionEnabled());
+        assertTrue(buttons().isCameraVisible());
+        assertTrue(buttons().isAlbumVisible());
+
+        type("再问一个");
+        assertTrue(buttons().isStop());
+        assertFalse("相机与「+」仍按文字规则", buttons().isCameraVisible());
+        assertFalse(canSend());
+
+        vm.onActionClick();
+        assertFalse("生成中点按为停止生成", vm.isStreaming());
+        assertFalse(answer.hasSubscribers());
+        assertEquals(1, repo.sendCalls.size());
+        assertFalse(buttons().isStop());
+        assertTrue(canSend());
+        assertEquals("再问一个", vm.getInputText().getValue());
     }
 
     @Test
     public void stopGenerating_keepsOutput_andCancelsStream() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         answer.onNext(content("建议今天就"));
         assertTrue(answer.hasSubscribers());
 
-        vm.onSendOrStop();
+        vm.onActionClick();
 
         assertFalse("取消订阅即取消请求", answer.hasSubscribers());
         assertFalse(vm.isStreaming());
@@ -176,7 +236,7 @@ public class ChatViewModelTest {
     @Test
     public void stopBeforeFirstChunk_removesEmptyBubble() {
         pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         vm.stopGenerating();
         assertEquals(1, messages().size());
         assertEquals(ChatMessage.TYPE_USER_TEXT, last().getType());
@@ -185,7 +245,7 @@ public class ChatViewModelTest {
 
     @Test
     public void regenerate_replacesLastAnswer_reusesSession() {
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         long oldId = last().getLocalId();
         repo.answer = call -> FakeAiRepository.contents("新的回答");
 
@@ -205,14 +265,14 @@ public class ChatViewModelTest {
     @Test
     public void regenerate_ignoredWhileStreaming() {
         pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         vm.regenerate();
         assertEquals(1, repo.sendCalls.size());
     }
 
     @Test
     public void latestFlag_onlyOnLastAnswer() {
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         type("今天另一片叶子背面也长了黑霉，是不是更严重了？");
         vm.send();
         List<ChatMessage> list = messages();
@@ -229,7 +289,7 @@ public class ChatViewModelTest {
     public void error50201_keepsContent_andRetryRegenerates() {
         repo.answer = call -> Flowable.concat(FakeAiRepository.contents("结合识别结果"),
                 Flowable.<StreamChunk>error(ApiException.of(ApiException.AI_UNAVAILABLE)));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
 
         ChatMessage ai = last();
         assertEquals("结合识别结果", ai.getContent());
@@ -251,7 +311,7 @@ public class ChatViewModelTest {
     public void streamBroken_showsInterruptedNotice() {
         repo.answer = call -> Flowable.concat(FakeAiRepository.contents("从照片看，"),
                 Flowable.<StreamChunk>error(new StreamBrokenException()));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         assertEquals("从照片看，", last().getContent());
         assertEquals(ChatMessage.NOTICE_BROKEN, last().getNotice());
         assertTrue(last().isRetryable());
@@ -260,7 +320,7 @@ public class ChatViewModelTest {
     @Test
     public void networkErrorOnCreateSession_showsInterrupted_andRetryCreatesSessionAgain() {
         repo.createSessionResult = Single.error(ApiException.of(ApiException.NETWORK));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         assertEquals(ChatMessage.NOTICE_BROKEN, last().getNotice());
         assertEquals("", last().getContent());
         assertTrue(repo.sendCalls.isEmpty());
@@ -276,7 +336,7 @@ public class ChatViewModelTest {
     @Test
     public void tooFrequent_removesEmptyBubble_andToasts() {
         repo.answer = call -> Flowable.error(ApiException.of(ApiException.TOO_FREQUENT));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         assertEquals(1, messages().size());
         assertEquals(ChatMessage.TYPE_USER_TEXT, last().getType());
         assertEquals("操作太频繁，请稍后再试", vm.getToast().getValue());
@@ -286,7 +346,7 @@ public class ChatViewModelTest {
     @Test
     public void unauthorized_removesEmptyBubble() {
         repo.createSessionResult = Single.error(ApiException.of(ApiException.UNAUTHORIZED));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         assertEquals(1, messages().size());
         assertEquals("未登录或登录已过期，请重新登录", vm.getToast().getValue());
     }
@@ -294,7 +354,7 @@ public class ChatViewModelTest {
     @Test
     public void emptyAnswer_showsEmptyNotice() {
         repo.answer = call -> Flowable.empty();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         ChatMessage ai = last();
         assertEquals(ChatMessage.NOTICE_EMPTY, ai.getNotice());
         assertFalse(ai.isStreaming());
@@ -304,86 +364,167 @@ public class ChatViewModelTest {
 
     // ==================== 带图提问 ====================
 
-    @Test
-    public void imageOnly_uploadsOnce_andUsesDefaultQuestion() {
-        vm.init(ChatArgs.ofQuestion(null, IMAGE_URI));
-
-        List<ChatMessage> list = messages();
-        assertEquals(2, list.size());
-        ChatMessage image = list.get(0);
-        assertEquals(ChatMessage.TYPE_USER_IMAGE, image.getType());
-        assertEquals(IMAGE_URI, image.getLocalUri());
-        assertEquals(IMAGE_URL, image.getImageUrl());
-        assertEquals(ChatMessage.IMAGE_DONE, image.getImageState());
-        assertEquals(Collections.singletonList(IMAGE_URI), repo.uploadCalls);
-
-        FakeAiRepository.SendCall call = repo.sendCalls.get(0);
-        assertEquals(AiConstants.DEFAULT_IMAGE_QUESTION, call.content);
-        assertEquals(IMAGE_URL, call.imageUrl);
-        assertNull(vm.getPendingImage().getValue());
-
-        vm.regenerate();
-        assertEquals("重新生成不重复上传", 1, repo.uploadCalls.size());
-        assertEquals(IMAGE_URL, repo.sendCalls.get(1).imageUrl);
+    private static List<String> list(String... values) {
+        return Arrays.asList(values);
     }
 
     @Test
-    public void imageWithText_addsImageThenText() {
-        vm.init(ChatArgs.ofQuestion("今天另一片叶子背面也长了黑霉", IMAGE_URI));
+    public void initWithUploadedImages_sendsWithoutUploading_andContentEmpty() {
+        vm.init(ChatArgs.ofQuestion(null, list(IMAGE_URI, IMAGE_URI_2), list(IMAGE_URL, IMAGE_URL_2)));
+
+        List<ChatMessage> list = messages();
+        assertEquals("只发图片没有文字气泡", 2, list.size());
+        ChatMessage images = list.get(0);
+        assertEquals(ChatMessage.TYPE_USER_IMAGE, images.getType());
+        assertEquals("全部图片是一个列表项", list(IMAGE_URL, IMAGE_URL_2), images.getImageUrls());
+        assertEquals(list(IMAGE_URI, IMAGE_URI_2), images.getLocalUris());
+        assertEquals("优先显示本地图片", list(IMAGE_URI, IMAGE_URI_2), images.getImageSources());
+        assertTrue("Q01 已上传，不再上传", repo.uploadCalls.isEmpty());
+
+        FakeAiRepository.SendCall call = repo.sendCalls.get(0);
+        assertEquals("只发图片时 content 为空串", "", call.content);
+        assertEquals(list(IMAGE_URL, IMAGE_URL_2), call.imageUrls);
+        assertFalse(call.regenerate);
+        assertEquals(ANSWER, last().getContent());
+
+        vm.regenerate();
+        FakeAiRepository.SendCall again = repo.sendCalls.get(1);
+        assertTrue(again.regenerate);
+        assertEquals("", again.content);
+        assertEquals("重新生成原样重发图片地址", list(IMAGE_URL, IMAGE_URL_2), again.imageUrls);
+        assertTrue(repo.uploadCalls.isEmpty());
+    }
+
+    @Test
+    public void initWithImagesAndText_addsImagesThenText() {
+        vm.init(ChatArgs.ofQuestion("今天另一片叶子背面也长了黑霉", list(IMAGE_URI), list(IMAGE_URL)));
         List<ChatMessage> list = messages();
         assertEquals(3, list.size());
         assertEquals(ChatMessage.TYPE_USER_IMAGE, list.get(0).getType());
         assertEquals(ChatMessage.TYPE_USER_TEXT, list.get(1).getType());
         assertEquals(ChatMessage.TYPE_AI, list.get(2).getType());
         assertEquals("今天另一片叶子背面也长了黑霉", repo.sendCalls.get(0).content);
+        assertEquals(list(IMAGE_URL), repo.sendCalls.get(0).imageUrls);
     }
 
     @Test
-    public void uploadFailure_marksImage_andTapImageRetries() {
-        repo.uploadResult = Single.error(ApiException.of(ApiException.NETWORK));
-        vm.init(ChatArgs.ofQuestion("叶子背面长了黑霉", IMAGE_URI));
+    public void composerImages_uploadImmediately_andSendInOrder() {
+        Map<String, SingleSubject<String>> uploads = new LinkedHashMap<>();
+        repo.upload = uri -> {
+            SingleSubject<String> subject = SingleSubject.create();
+            uploads.put(uri, subject);
+            return subject;
+        };
+        vm.init(ChatArgs.ofRecord(-1));
+        vm.onImagesPicked(list(IMAGE_URI, IMAGE_URI_2));
+        assertEquals("选好即上传", list(IMAGE_URI, IMAGE_URI_2), repo.uploadCalls);
+        assertEquals(Integer.valueOf(2), vm.getImageCount().getValue());
+        assertTrue("只有图片也能点发送", canSend());
 
+        // 第二张先完成：发送顺序仍按加入顺序
+        uploads.get(IMAGE_URI_2).onSuccess(IMAGE_URL_2);
+        uploads.get(IMAGE_URI).onSuccess(IMAGE_URL);
+        type("叶子背面长了黑霉");
+        vm.send();
+
+        FakeAiRepository.SendCall call = repo.sendCalls.get(0);
+        assertEquals("叶子背面长了黑霉", call.content);
+        assertEquals(list(IMAGE_URL, IMAGE_URL_2), call.imageUrls);
+        assertEquals("发送不再上传", 2, repo.uploadCalls.size());
         List<ChatMessage> list = messages();
-        assertEquals("空 AI 气泡被移除", 2, list.size());
-        ChatMessage image = list.get(0);
-        assertEquals(ChatMessage.IMAGE_FAILED, image.getImageState());
-        assertEquals(AiConstants.TOAST_IMAGE_UPLOAD_FAILED, vm.getToast().getValue());
+        assertEquals(3, list.size());
+        assertEquals(list(IMAGE_URI, IMAGE_URI_2), list.get(0).getLocalUris());
+        assertEquals(list(IMAGE_URL, IMAGE_URL_2), list.get(0).getImageUrls());
+        assertTrue("发送后清空图片队列", vm.getImages().getValue().isEmpty());
+        assertEquals("", vm.getInputText().getValue());
+    }
+
+    @Test
+    public void send_blockedWhileUploading() {
+        SingleSubject<String> upload = SingleSubject.create();
+        repo.upload = uri -> upload;
+        vm.init(ChatArgs.ofRecord(-1));
+        type("看看这张");
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertTrue(canSend());
+
+        vm.send();
+        assertEquals(AiConstants.TOAST_IMAGES_UPLOADING, vm.getToast().getValue());
         assertTrue(repo.sendCalls.isEmpty());
-        assertFalse(vm.isStreaming());
+        assertTrue(messages().isEmpty());
+        assertEquals("看看这张", vm.getInputText().getValue());
+        assertEquals(1, vm.getImages().getValue().size());
+
+        upload.onSuccess(IMAGE_URL);
+        vm.send();
+        assertEquals(1, repo.sendCalls.size());
+        assertEquals(list(IMAGE_URL), repo.sendCalls.get(0).imageUrls);
+    }
+
+    @Test
+    public void send_blockedWithFailedImage_andRetryThenSend() {
+        repo.uploadResult = Single.error(ApiException.of(ApiException.NETWORK));
+        vm.init(ChatArgs.ofRecord(-1));
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertEquals(AiConstants.TOAST_IMAGE_UPLOAD_FAILED, vm.getToast().getValue());
+        PendingImage failed = vm.getImages().getValue().get(0);
+        assertTrue(failed.isFailed());
+
+        vm.send();
+        assertEquals(AiConstants.TOAST_IMAGES_FAILED, vm.getToast().getValue());
+        assertTrue(repo.sendCalls.isEmpty());
 
         repo.uploadResult = Single.just(IMAGE_URL);
-        vm.onImageClick(image);
-
+        vm.retryImage(failed.getId());
         assertEquals(2, repo.uploadCalls.size());
-        assertEquals(1, repo.sendCalls.size());
-        assertTrue(repo.sendCalls.get(0).regenerate);
-        assertEquals(IMAGE_URL, repo.sendCalls.get(0).imageUrl);
-        list = messages();
-        assertEquals(3, list.size());
-        assertEquals(ChatMessage.IMAGE_DONE, list.get(0).getImageState());
-        assertEquals(ANSWER, last().getContent());
+        vm.send();
+        FakeAiRepository.SendCall call = repo.sendCalls.get(0);
+        assertEquals("只发图片时 content 为空串", "", call.content);
+        assertEquals(list(IMAGE_URL), call.imageUrls);
+        assertEquals("只有图片项与 AI 气泡", 2, messages().size());
     }
 
     @Test
-    public void imageReadFailure_withdrawsQuestion_andRestoresText() {
+    public void imageReadFailure_removesImageFromComposer() {
         repo.uploadResult = Single.error(new ImageCompressor.ImageReadException("bad image"));
         vm.init(ChatArgs.ofRecord(-1));
         type("看看这张");
-        vm.setPendingImage("content://bad");
-        vm.send();
+        vm.onImagesPicked(list("content://bad"));
 
-        assertTrue(messages().isEmpty());
+        assertTrue(vm.getImages().getValue().isEmpty());
         assertEquals(AiConstants.TOAST_IMAGE_READ_FAILED, vm.getToast().getValue());
         assertEquals("看看这张", vm.getInputText().getValue());
-        assertTrue(repo.sendCalls.isEmpty());
+        assertTrue(messages().isEmpty());
         assertFalse(vm.isStreaming());
+    }
+
+    @Test
+    public void removeImage_cancelsUpload() {
+        SingleSubject<String> upload = SingleSubject.create();
+        repo.upload = uri -> upload;
+        vm.init(ChatArgs.ofRecord(-1));
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertTrue(upload.hasObservers());
+        vm.removeImage(vm.getImages().getValue().get(0).getId());
+        assertFalse(upload.hasObservers());
+        assertFalse(canSend());
+    }
+
+    @Test
+    public void addImages_whileStreaming_thenSendAfterAnswer() {
+        PublishProcessor<StreamChunk> answer = pendingAnswer();
+        vm.init(ChatArgs.ofQuestion(QUESTION));
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertFalse("生成中可以添加图片但不能发送", canSend());
+        answer.onComplete();
+        assertTrue(canSend());
     }
 
     // ==================== 初始化、引用卡、游客 ====================
 
     @Test
     public void init_onlyOnce() {
-        ChatArgs args = ChatArgs.ofQuestion(QUESTION, null);
+        ChatArgs args = ChatArgs.ofQuestion(QUESTION);
         vm.init(args);
         vm.init(args);
         assertEquals(1, repo.sendCalls.size());
@@ -421,7 +562,7 @@ public class ChatViewModelTest {
         vm.init(ChatArgs.ofRecord(2036));
         assertTrue(messages().isEmpty());
 
-        ChatViewModel other = new ChatViewModel(repo);
+        ChatViewModel other = new ChatViewModel(repo, modeStore);
         repo.recordResult = Single.just(FakeAiRepository.record(2037, "FAILED", null, null, null));
         other.init(ChatArgs.ofRecord(2037));
         assertTrue(other.getMessages().getValue().isEmpty());
@@ -432,30 +573,59 @@ public class ChatViewModelTest {
         repo.guest = true;
         List<Integer> events = new java.util.ArrayList<>();
         vm.getEvent().observeForever(e -> events.add(e.type));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         assertTrue(messages().isEmpty());
         assertTrue(repo.sendCalls.isEmpty());
 
-        vm.onPickImageClick();
-        assertEquals(Arrays.asList(ChatEvent.NEED_LOGIN, ChatEvent.NEED_LOGIN), events);
+        vm.onCameraClick();
+        vm.onAlbumClick();
+        assertEquals(Arrays.asList(ChatEvent.NEED_LOGIN, ChatEvent.NEED_LOGIN, ChatEvent.NEED_LOGIN), events);
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertTrue(repo.uploadCalls.isEmpty());
     }
 
     @Test
-    public void pickImage_whenLoggedIn() {
+    public void addImage_whenLoggedIn_cameraTakesPhoto_plusOpensAlbum() {
         vm.init(ChatArgs.ofRecord(-1));
-        vm.onPickImageClick();
-        assertEquals(ChatEvent.PICK_IMAGE, vm.getEvent().getValue().type);
-        vm.setPendingImage(IMAGE_URI);
-        assertEquals(Boolean.TRUE, vm.getCanSend().getValue());
-        vm.clearPendingImage();
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
+        List<Integer> events = new ArrayList<>();
+        vm.getEvent().observeForever(e -> events.add(e.type));
+        vm.onCameraClick();
+        vm.onAlbumClick();
+        assertEquals("不再弹出来源面板，直接拍照 / 打开相册", Arrays.asList(ChatEvent.TAKE_PHOTO, ChatEvent.PICK_IMAGE), events);
+        assertEquals(AiConstants.MAX_IMAGES, vm.remainingImages());
+
+        vm.onImagesPicked(list(IMAGE_URI));
+        assertTrue(canSend());
+        assertEquals(8, vm.remainingImages());
+        vm.removeImage(vm.getImages().getValue().get(0).getId());
+        assertFalse(canSend());
+    }
+
+    @Test
+    public void addImage_whenFull_toastsInsteadOfOpeningPicker() {
+        repo.upload = FakeAiRepository::urlSingle;
+        vm.init(ChatArgs.ofRecord(-1));
+        vm.onImagesPicked(list("c://1", "c://2", "c://3", "c://4", "c://5", "c://6", "c://7", "c://8", "c://9"));
+        assertTrue("已满 9 张：相机与「+」变淡", buttons().isAddDimmed());
+        assertTrue(buttons().isCameraVisible());
+        List<Integer> events = new ArrayList<>();
+        vm.getEvent().observeForever(e -> events.add(e.type));
+
+        vm.onCameraClick();
+        vm.onAlbumClick();
+        assertTrue(events.isEmpty());
+        assertEquals(AiConstants.TOAST_TOO_MANY_IMAGES, vm.getToast().getValue());
+
+        vm.send();
+        assertEquals(9, repo.sendCalls.get(0).imageUrls.size());
+        assertFalse(buttons().isAddDimmed());
     }
 
     @Test
     public void tooLongQuestion_truncatedTo500_andToasts() {
         char[] chars = new char[600];
         Arrays.fill(chars, '叶');
-        vm.init(ChatArgs.ofQuestion(new String(chars), null));
+        vm.init(ChatArgs.ofQuestion(new String(chars)));
         assertEquals(AiConstants.TOAST_QUESTION_TOO_LONG, vm.getToast().getValue());
         assertEquals(500, repo.sendCalls.get(0).content.length());
         assertEquals(500, messages().get(0).getContent().length());
@@ -465,8 +635,8 @@ public class ChatViewModelTest {
     public void blankInput_cannotSend() {
         vm.init(ChatArgs.ofRecord(-1));
         type("   ");
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
-        assertEquals(Boolean.FALSE, vm.getActionEnabled().getValue());
+        assertFalse(canSend());
+        assertFalse(buttons().isActionEnabled());
         vm.send();
         assertTrue(repo.sendCalls.isEmpty());
         assertTrue(messages().isEmpty());
@@ -479,7 +649,7 @@ public class ChatViewModelTest {
         AtomicLong now = new AtomicLong(10_000);
         vm.setClock(now::get);
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
 
         ChatMessage ai = last();
         assertEquals("从发送时刻计时", 10_000, ai.getStartedAt());
@@ -515,7 +685,7 @@ public class ChatViewModelTest {
     @Test
     public void noReasoning_thinkingRowHiddenAfterContentStarts() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(null, IMAGE_URI));
+        vm.init(ChatArgs.ofQuestion(null, list(IMAGE_URI), list(IMAGE_URL)));
         assertEquals("带图提问走识图模型：只显示「正在思考… 已用 N 秒」", ThinkingFormatter.THINKING,
                 last().thinkingState());
         answer.onNext(content("从照片看，"));
@@ -526,7 +696,7 @@ public class ChatViewModelTest {
     @Test
     public void stopWhileThinking_keepsReasoningCollapsedAsStopped() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         answer.onNext(reasoning("先判断病害类型"));
         vm.stopGenerating();
 
@@ -547,7 +717,7 @@ public class ChatViewModelTest {
         AtomicLong now = new AtomicLong(1_000);
         vm.setClock(now::get);
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         answer.onNext(reasoning("思考"));
         now.set(4_600);
         answer.onNext(content("建议今天就"));
@@ -560,7 +730,7 @@ public class ChatViewModelTest {
     @Test
     public void toggleReasoning_onlyAfterCollapse() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         answer.onNext(reasoning("思考"));
         vm.toggleReasoning(last());
         assertFalse("思考中不响应", last().isReasoningExpanded());
@@ -578,7 +748,7 @@ public class ChatViewModelTest {
     @Test
     public void typingTracker_followsAnswerLifecycle() {
         PublishProcessor<StreamChunk> answer = pendingAnswer();
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         long id = last().getLocalId();
         TypingTracker typing = vm.getTyping();
         assertTrue(typing.isTracking(id));
@@ -600,7 +770,7 @@ public class ChatViewModelTest {
     public void retry_dropsOldTypingEntry_andTracksNewAnswer() {
         repo.answer = call -> Flowable.concat(FakeAiRepository.contents("从照片看，"),
                 Flowable.<StreamChunk>error(new StreamBrokenException()));
-        vm.init(ChatArgs.ofQuestion(QUESTION, null));
+        vm.init(ChatArgs.ofQuestion(QUESTION));
         long oldId = last().getLocalId();
         assertTrue("中断后剩余内容仍在显示", vm.getTyping().isTracking(oldId));
 
@@ -622,6 +792,13 @@ public class ChatViewModelTest {
         vo.setReasoningContent(reasoning);
         vo.setReasoningMs(reasoningMs);
         vo.setCreatedAt(new Date());
+        return vo;
+    }
+
+    /** 新版本的用户消息：image_urls + 第一张的 image_url */
+    private static ChatMessageVO userImages(String content, List<String> imageUrls) {
+        ChatMessageVO vo = vo("user", content, imageUrls.isEmpty() ? null : imageUrls.get(0), null, null);
+        vo.setImageUrls(imageUrls);
         return vo;
     }
 
@@ -662,8 +839,10 @@ public class ChatViewModelTest {
         assertFalse(firstAi.isLatest());
 
         ChatMessage image = list.get(3);
-        assertEquals("只发图片时默认问题不显示为文字气泡", ChatMessage.TYPE_USER_IMAGE, image.getType());
-        assertEquals(IMAGE_URL, image.getImageUrl());
+        assertEquals("旧数据只发图片时默认问题不显示为文字气泡", ChatMessage.TYPE_USER_IMAGE, image.getType());
+        assertEquals("没有 image_urls 时用旧字段 image_url", Collections.singletonList(IMAGE_URL), image.getImageUrls());
+        assertTrue("历史消息只有服务器地址", image.getLocalUris().isEmpty());
+        assertEquals(Collections.singletonList(IMAGE_URL), image.getImageSources());
         ChatMessage lastAi = list.get(4);
         assertEquals(ThinkingFormatter.HIDDEN, lastAi.thinkingState());
         assertTrue(lastAi.isLatest());
@@ -704,8 +883,8 @@ public class ChatViewModelTest {
         assertEquals(1, repo.sendCalls.size());
         FakeAiRepository.SendCall call = repo.sendCalls.get(0);
         assertEquals(700, call.sessionId);
-        assertEquals(AiConstants.DEFAULT_IMAGE_QUESTION, call.content);
-        assertEquals(IMAGE_URL, call.imageUrl);
+        assertEquals("旧数据原样重发默认问题", AiConstants.DEFAULT_IMAGE_QUESTION, call.content);
+        assertEquals(Collections.singletonList(IMAGE_URL), call.imageUrls);
         assertTrue(call.regenerate);
         assertTrue("图片已在服务器上，不重复上传", repo.uploadCalls.isEmpty());
         assertEquals(5, messages().size());
@@ -747,15 +926,15 @@ public class ChatViewModelTest {
         vm.init(ChatArgs.ofSession(700));
         assertEquals(UiState.LOADING, vm.getLoadState().getValue());
         type("还能发吗");
-        assertEquals("加载中不能发送", Boolean.FALSE, vm.getCanSend().getValue());
-        assertEquals(Boolean.FALSE, vm.getActionEnabled().getValue());
+        assertFalse("加载中不能发送", canSend());
+        assertFalse(buttons().isActionEnabled());
         vm.send();
         assertTrue(repo.sendCalls.isEmpty());
 
         pending.onError(ApiException.of(ApiException.NETWORK));
         assertEquals(UiState.ERROR, vm.getLoadState().getValue());
         assertEquals(ApiException.defaultMessage(ApiException.NETWORK), vm.getLoadError().getValue());
-        assertEquals(Boolean.FALSE, vm.getCanSend().getValue());
+        assertFalse(canSend());
         assertTrue(messages().isEmpty());
 
         repo.sessionResult = Single.just(detail());
@@ -763,7 +942,78 @@ public class ChatViewModelTest {
         assertEquals(2, repo.sessionCalls.size());
         assertEquals(UiState.SUCCESS, vm.getLoadState().getValue());
         assertEquals(5, messages().size());
-        assertEquals("输入的文字保留，加载完成后可发送", Boolean.TRUE, vm.getCanSend().getValue());
+        assertTrue("输入的文字保留，加载完成后可发送", canSend());
+    }
+
+    @Test
+    public void openSession_multiImageMessages() {
+        SessionDetailVO d = new SessionDetailVO();
+        d.setSessionId(702);
+        d.setTitle("图片提问");
+        d.setMessages(Arrays.asList(
+                userImages("", list(IMAGE_URL, IMAGE_URL_2)),
+                vo("assistant", "两张照片都像霜霉病。", null, null, null),
+                userImages("第三张是新叶", list("http://x/3.jpg")),
+                vo("assistant", "新叶也有。", null, null, null)));
+        repo.sessionResult = Single.just(d);
+        vm.init(ChatArgs.ofSession(702));
+
+        List<ChatMessage> list = messages();
+        assertEquals(5, list.size());
+        assertEquals(ChatMessage.TYPE_USER_IMAGE, list.get(0).getType());
+        assertEquals("image_urls 优先", list(IMAGE_URL, IMAGE_URL_2), list.get(0).getImageUrls());
+        assertEquals("只发图片（content 为空）没有文字气泡", ChatMessage.TYPE_AI, list.get(1).getType());
+        assertEquals(ChatMessage.TYPE_USER_IMAGE, list.get(2).getType());
+        assertEquals(ChatMessage.TYPE_USER_TEXT, list.get(3).getType());
+        assertEquals("第三张是新叶", list.get(3).getContent());
+
+        repo.answer = call -> FakeAiRepository.contents("新的回答");
+        vm.regenerate();
+        FakeAiRepository.SendCall call = repo.sendCalls.get(0);
+        assertEquals("第三张是新叶", call.content);
+        assertEquals(list("http://x/3.jpg"), call.imageUrls);
+        assertTrue(call.regenerate);
+    }
+
+    @Test
+    public void buildHistory_imageOnlyNewMessage_regeneratesWithEmptyContent() {
+        SessionDetailVO d = new SessionDetailVO();
+        d.setMessages(Arrays.asList(
+                userImages("", list(IMAGE_URL, IMAGE_URL_2)),
+                vo("assistant", "回答", null, null, null)));
+        ChatViewModel.History history = ChatViewModel.buildHistory(d);
+        ChatViewModel.Question q = history.lastQuestion;
+        assertEquals("", q.text);
+        assertEquals("", q.content);
+        assertEquals(list(IMAGE_URL, IMAGE_URL_2), q.imageUrls);
+        assertEquals(history.messages.get(0).getLocalId(), q.imageMessageId);
+        assertEquals(0, q.textMessageId);
+    }
+
+    @Test
+    public void imageUrlsOf_prefersListThenLegacyField() {
+        ChatMessageVO both = userImages("看看", list(IMAGE_URL, IMAGE_URL_2));
+        assertEquals(list(IMAGE_URL, IMAGE_URL_2), ChatViewModel.imageUrlsOf(both));
+
+        ChatMessageVO legacy = vo("user", "看看", IMAGE_URL, null, null);
+        assertEquals("旧服务器不返回 image_urls", list(IMAGE_URL), ChatViewModel.imageUrlsOf(legacy));
+        legacy.setImageUrls(Collections.emptyList());
+        assertEquals("image_urls 为空数组时也退回 image_url", list(IMAGE_URL), ChatViewModel.imageUrlsOf(legacy));
+
+        ChatMessageVO blanks = vo("user", "看看", null, null, null);
+        blanks.setImageUrls(Arrays.asList(" ", null, IMAGE_URL_2));
+        assertEquals("去掉空值", list(IMAGE_URL_2), ChatViewModel.imageUrlsOf(blanks));
+
+        assertTrue(ChatViewModel.imageUrlsOf(vo("user", "看看", null, null, null)).isEmpty());
+    }
+
+    @Test
+    public void legacyDefaultQuestion_withoutImage_isShownAsText() {
+        SessionDetailVO d = new SessionDetailVO();
+        d.setMessages(Collections.singletonList(vo("user", AiConstants.DEFAULT_IMAGE_QUESTION, null, null, null)));
+        ChatViewModel.History history = ChatViewModel.buildHistory(d);
+        assertEquals(1, history.messages.size());
+        assertEquals(ChatMessage.TYPE_USER_TEXT, history.messages.get(0).getType());
     }
 
     @Test
@@ -772,5 +1022,183 @@ public class ChatViewModelTest {
         vm.init(ChatArgs.ofSession(700));
         vm.init(ChatArgs.ofSession(700));
         assertEquals(1, repo.sessionCalls.size());
+    }
+
+    // ==================== 语音输入 ====================
+
+    @Test
+    public void voice_worksWhileStreaming_onlyFillsText() throws IOException {
+        PublishProcessor<StreamChunk> answer = pendingAnswer();
+        vm.init(ChatArgs.ofQuestion(QUESTION));
+        assertTrue(vm.isStreaming());
+        assertTrue("生成中麦克风仍显示", buttons().isMicVisible());
+        List<String> texts = new ArrayList<>();
+        vm.getVoiceText().observeForever(texts::add);
+        repo.asrResult = Single.just("那需要打什么药？");
+        File wav = temp.newFile("voice.wav");
+
+        assertTrue("生成中也可以录音", vm.onVoicePress());
+        vm.recognizeSpeech(wav);
+
+        assertEquals(Collections.singletonList("那需要打什么药？"), texts);
+        assertFalse(wav.exists());
+        assertEquals("只填文字，不发送", 1, repo.sendCalls.size());
+        assertTrue("不影响正在生成的回答", vm.isStreaming());
+        answer.onNext(content("可以用"));
+        assertEquals("可以用", last().getContent());
+    }
+
+    @Test
+    public void voice_guest_needsLogin() throws IOException {
+        repo.guest = true;
+        vm.init(ChatArgs.ofRecord(-1));
+        List<Integer> events = new ArrayList<>();
+        vm.getEvent().observeForever(e -> events.add(e.type));
+        File wav = temp.newFile("guest.wav");
+
+        assertFalse(vm.onVoicePress());
+        vm.recognizeSpeech(wav);
+
+        assertEquals(Arrays.asList(ChatEvent.NEED_LOGIN, ChatEvent.NEED_LOGIN), events);
+        assertTrue(repo.asrCalls.isEmpty());
+        assertFalse(wav.exists());
+    }
+
+    @Test
+    public void voice_recognizingState_andErrorToast() throws IOException {
+        vm.init(ChatArgs.ofRecord(-1));
+        SingleSubject<String> pending = SingleSubject.create();
+        repo.asr = w -> pending;
+        List<String> toasts = new ArrayList<>();
+        vm.getToast().observeForever(toasts::add);
+        File wav = temp.newFile("pending.wav");
+
+        vm.recognizeSpeech(wav);
+        assertEquals(Boolean.TRUE, vm.getVoiceRecognizing().getValue());
+        assertFalse("识别中忽略新的按下", vm.onVoicePress());
+
+        pending.onError(ApiException.of(ApiException.AI_UNAVAILABLE, AiConstants.TOAST_VOICE_UNAVAILABLE));
+        assertEquals(Collections.singletonList(AiConstants.TOAST_VOICE_UNAVAILABLE), toasts);
+        assertEquals(Boolean.FALSE, vm.getVoiceRecognizing().getValue());
+        assertNull(vm.getVoiceText().getValue());
+        assertFalse(wav.exists());
+        assertTrue(vm.onVoicePress());
+
+        vm.onVoiceTooShort();
+        assertEquals(AiConstants.TOAST_VOICE_TOO_SHORT, toasts.get(toasts.size() - 1));
+    }
+
+    @Test
+    public void voice_onCleared_cancelsUpload() throws IOException {
+        vm.init(ChatArgs.ofRecord(-1));
+        SingleSubject<String> pending = SingleSubject.create();
+        repo.asr = w -> pending;
+        File wav = temp.newFile("cleared.wav");
+        vm.recognizeSpeech(wav);
+        vm.onCleared();
+        assertFalse(pending.hasObservers());
+        assertFalse(wav.exists());
+    }
+
+    // ==================== 输入方式（文字 / 语音） ====================
+
+    /** 记住语音后打开的新页面（Q02 每次打开都是新的 ViewModel） */
+    private ChatViewModel openWithVoiceRemembered() {
+        modeStore.setVoiceMode(true);
+        ChatViewModel chat = new ChatViewModel(repo, modeStore);
+        chat.getComposerButtons().observeForever(v -> { });
+        return chat;
+    }
+
+    @Test
+    public void inputMode_initial_isRemembered() {
+        assertEquals("没有记录时为文字", Boolean.FALSE, vm.getVoiceMode().getValue());
+        assertEquals(ComposerButtons.EMPTY, buttons());
+
+        ChatViewModel chat = openWithVoiceRemembered();
+        assertEquals("与 Q01 共用记住的方式", Boolean.TRUE, chat.getVoiceMode().getValue());
+        ComposerButtons b = chat.getComposerButtons().getValue();
+        assertTrue(b.isTalkVisible());
+        assertTrue(b.isKeyboardVisible());
+        assertFalse(b.isActionVisible());
+    }
+
+    @Test
+    public void toggle_switchesAndRemembers_permissionTiming() {
+        vm.init(ChatArgs.ofRecord(-1));
+        assertTrue("没有权限：页面申请", vm.onToggleInputMode(false));
+        assertEquals(Boolean.FALSE, vm.getVoiceMode().getValue());
+        vm.onMicPermissionResult(true);
+        assertEquals("授权后进入语音", Boolean.TRUE, vm.getVoiceMode().getValue());
+        assertTrue(modeStore.isVoiceMode());
+        assertTrue(buttons().isTalkVisible());
+
+        assertFalse(vm.onToggleInputMode(true));
+        assertEquals(Boolean.FALSE, vm.getVoiceMode().getValue());
+        assertFalse(modeStore.isVoiceMode());
+    }
+
+    @Test
+    public void toggle_guest_needsLogin_noChange() {
+        repo.guest = true;
+        vm.init(ChatArgs.ofRecord(-1));
+        List<Integer> events = new ArrayList<>();
+        vm.getEvent().observeForever(e -> events.add(e.type));
+        assertFalse(vm.onToggleInputMode(true));
+        assertFalse(vm.onToggleInputMode(false));
+        assertEquals(Arrays.asList(ChatEvent.NEED_LOGIN, ChatEvent.NEED_LOGIN), events);
+        assertEquals(Boolean.FALSE, vm.getVoiceMode().getValue());
+        assertFalse(modeStore.isVoiceMode());
+    }
+
+    @Test
+    public void recognized_temporaryText_revertsToVoiceAfterSend() throws IOException {
+        ChatViewModel chat = openWithVoiceRemembered();
+        chat.init(ChatArgs.ofRecord(-1));
+        repo.asrResult = Single.just("需要打什么药？");
+        chat.getInputText().setValue("番茄晚疫病");
+
+        chat.recognizeSpeech(temp.newFile("draft.wav"));
+        assertEquals("追加到草稿之后", "番茄晚疫病需要打什么药？", chat.getInputText().getValue());
+        assertEquals("临时切到文字", Boolean.FALSE, chat.getVoiceMode().getValue());
+        assertTrue("不改变记住的方式", modeStore.isVoiceMode());
+
+        chat.send();
+        assertEquals(1, repo.sendCalls.size());
+        assertEquals("番茄晚疫病需要打什么药？", repo.sendCalls.get(0).content);
+        assertEquals("", chat.getInputText().getValue());
+        assertEquals("发送后回到「按住 说话」", Boolean.TRUE, chat.getVoiceMode().getValue());
+        assertTrue(chat.getComposerButtons().getValue().isTalkVisible());
+    }
+
+    @Test
+    public void voiceMode_whileStreaming_stopShown_recognizedStaysUnsent() throws IOException {
+        ChatViewModel chat = openWithVoiceRemembered();
+        PublishProcessor<StreamChunk> answer = PublishProcessor.create();
+        repo.answer = call -> answer;
+        chat.init(ChatArgs.ofQuestion(QUESTION));
+        ComposerButtons b = chat.getComposerButtons().getValue();
+        assertTrue(b.isVoiceMode());
+        assertTrue("生成中为停止按钮", b.isStop());
+        assertTrue(b.isActionVisible());
+
+        repo.asrResult = Single.just("那需要打什么药？");
+        chat.recognizeSpeech(temp.newFile("streaming.wav"));
+        assertEquals("那需要打什么药？", chat.getInputText().getValue());
+        assertEquals(Boolean.FALSE, chat.getVoiceMode().getValue());
+        assertEquals("只填文字，不发送", 1, repo.sendCalls.size());
+        assertTrue(chat.getComposerButtons().getValue().isStop());
+    }
+
+    @Test
+    public void voiceMode_sendsHiddenDraft() {
+        ChatViewModel chat = openWithVoiceRemembered();
+        chat.init(ChatArgs.ofRecord(-1));
+        chat.getInputText().setValue("刚才打的字");
+        assertTrue("隐藏的草稿：显示发送", chat.getComposerButtons().getValue().canSend());
+        chat.onActionClick();
+        assertEquals(1, repo.sendCalls.size());
+        assertEquals("刚才打的字", repo.sendCalls.get(0).content);
+        assertEquals(Boolean.TRUE, chat.getVoiceMode().getValue());
     }
 }

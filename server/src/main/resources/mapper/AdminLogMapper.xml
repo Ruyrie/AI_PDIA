@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.admin.mapper.AdminLogMapper">
+
+    <insert id="insert" parameterType="com.heban.pestai.server.admin.entity.AdminLog"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO t_admin_log (admin_id, admin_name, action, target, detail, ip, created_at)
+        VALUES (#{adminId}, #{adminName}, #{action}, #{target}, #{detail}, #{ip}, #{createdAt})
+    </insert>
+
+    <sql id="pageWhere">
+        <where>
+            <if test="action != null and action != ''">action = #{action}</if>
+        </where>
+    </sql>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM t_admin_log
+        <include refid="pageWhere"/>
+    </select>
+
+    <!-- 不带 action 时走 idx_created 倒序扫描，带 action 时走 idx_action_created -->
+    <select id="selectPage" resultType="com.heban.pestai.server.admin.entity.AdminLog">
+        SELECT id, admin_id, admin_name, action, target, detail, ip, created_at
+        FROM t_admin_log
+        <include refid="pageWhere"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+</mapper>

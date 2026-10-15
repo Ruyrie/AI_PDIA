@@ -194,8 +194,11 @@ class AccountServiceTest {
         String someoneElse = files.save(JPEG, FileStorageService.REC);
         when(userMapper.selectById(USER_ID)).thenReturn(user(PHONE, 2, avatar));
         when(recognitionMapper.selectAllImageUrlsByUser(USER_ID)).thenReturn(List.of(rec, recLogicallyDeleted));
+        String chatSecond = files.save(JPEG, FileStorageService.CHAT);
+        // 多图提问的每一张（t_ai_message_image）与 t_ai_message.image_url 由一条 UNION 查询一起返回；
         // 文件已不在磁盘上：尽力删除，不报错
-        when(aiMessageMapper.selectImageUrlsByUser(USER_ID)).thenReturn(List.of(chat, "chat/20261001/missing.jpg"));
+        when(aiMessageMapper.selectImageUrlsByUser(USER_ID))
+                .thenReturn(List.of(chat, chatSecond, "chat/20261001/missing.jpg"));
         when(userMapper.deleteById(USER_ID)).thenReturn(1);
 
         account.deactivate(USER_ID, CODE);
@@ -205,6 +208,7 @@ class AccountServiceTest {
         order.verify(smsService).verifyAndConsume(PHONE, SmsScene.DEACTIVATE, CODE);
         order.verify(recognitionMapper).selectAllImageUrlsByUser(USER_ID);
         order.verify(aiMessageMapper).selectImageUrlsByUser(USER_ID);
+        order.verify(aiMessageMapper).deleteImagesByUser(USER_ID);
         order.verify(aiMessageMapper).deleteByUser(USER_ID);
         order.verify(aiSessionMapper).deleteByUser(USER_ID);
         order.verify(recognitionMapper).deleteAllByUser(USER_ID);
@@ -217,6 +221,7 @@ class AccountServiceTest {
         assertThat(files.exists(rec)).isFalse();
         assertThat(files.exists(recLogicallyDeleted)).isFalse();
         assertThat(files.exists(chat)).isFalse();
+        assertThat(files.exists(chatSecond)).isFalse();
         assertThat(files.exists(someoneElse)).isTrue();
     }
 
@@ -272,6 +277,41 @@ class AccountServiceTest {
 
         assertBiz(() -> account.deactivate(USER_ID, CODE), ErrorCode.TOKEN_INVALID, null);
         assertThat(files.exists(avatar)).isTrue();
+    }
+
+    // ------------------------------------------------------------------ 后台注销
+
+    @Test
+    void adminDeactivateDeletesSameDataWithoutSmsEvenWhenDisabled() {
+        String avatar = files.save(JPEG, FileStorageService.AVATAR);
+        String rec = files.save(JPEG, FileStorageService.REC);
+        User disabled = user(PHONE, 2, avatar);
+        disabled.setStatus(User.STATUS_DISABLED);
+        when(userMapper.selectById(USER_ID)).thenReturn(disabled);
+        when(recognitionMapper.selectAllImageUrlsByUser(USER_ID)).thenReturn(List.of(rec));
+        when(userMapper.deleteById(USER_ID)).thenReturn(1);
+
+        account.deactivateByAdmin(USER_ID);
+
+        verifyNoInteractions(smsService);
+        InOrder order = inOrder(aiMessageMapper, aiSessionMapper, recognitionMapper, resetTicketMapper, smsCodeMapper,
+                userMapper);
+        order.verify(aiMessageMapper).deleteImagesByUser(USER_ID);
+        order.verify(aiMessageMapper).deleteByUser(USER_ID);
+        order.verify(aiSessionMapper).deleteByUser(USER_ID);
+        order.verify(recognitionMapper).deleteAllByUser(USER_ID);
+        order.verify(resetTicketMapper).deleteByUser(USER_ID);
+        order.verify(smsCodeMapper).deleteByPhone(PHONE);
+        order.verify(userMapper).deleteById(USER_ID);
+        assertThat(files.exists(avatar)).isFalse();
+        assertThat(files.exists(rec)).isFalse();
+    }
+
+    @Test
+    void adminDeactivateMissingUserIs40001() {
+        when(userMapper.selectById(USER_ID)).thenReturn(null);
+        assertBiz(() -> account.deactivateByAdmin(USER_ID), ErrorCode.PARAM_ERROR, "用户不存在");
+        verify(userMapper, never()).deleteById(anyLong());
     }
 
     private static void assertBiz(ThrowingCallable call, ErrorCode code, String message) {

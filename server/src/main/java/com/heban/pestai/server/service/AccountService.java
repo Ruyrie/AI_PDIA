@@ -35,6 +35,7 @@ import com.heban.pestai.server.vo.LoginVO;
  *       按新版本号签发令牌返回，本机保持登录，其他设备上的令牌全部失效。</li>
  *   <li>注销账号：验证<b>当前手机号</b>收到的验证码（DEACTIVATE）后，在一个事务内删除该用户的全部数据，
  *       事务提交后尽力删除磁盘上的头像、识别照片、聊天图片；之后旧令牌因用户不存在返回 40101，该手机号可立即重新注册。</li>
+ *   <li>后台注销（deactivateByAdmin）：删除的数据相同，不需要验证码、不发短信。</li>
  * </ul>
  */
 @Service
@@ -129,21 +130,40 @@ public class AccountService {
 
     /**
      * user/deactivate：校验并核销当前手机号的验证码（40103）后，在一个事务内依次删除
-     * t_ai_message（属于该用户的会话）→ t_ai_session → t_recognition（含已逻辑删除的）→ t_reset_ticket →
+     * t_ai_message_image、t_ai_message（属于该用户的会话）→ t_ai_session → t_recognition（含已逻辑删除的）→ t_reset_ticket →
      * 该手机号的 t_sms_code → 最后删除 t_user（恢复码随用户行一起删除）。
-     * 要删除的文件路径在删除数据行之前查出，事务提交后再删磁盘文件（回滚时文件保留）。
+     * 要删除的文件路径在删除数据行之前查出（聊天图片取 t_ai_message_image 与 t_ai_message.image_url 两处），
+     * 事务提交后再删磁盘文件（回滚时文件保留）。
      */
     @Transactional(rollbackFor = Exception.class)
     public void deactivate(long userId, String code) {
         User user = requireUser(userId);
-        String phone = user.getPhone();
-        smsService.verifyAndConsume(phone, SmsScene.DEACTIVATE, code);
+        smsService.verifyAndConsume(user.getPhone(), SmsScene.DEACTIVATE, code);
+        deleteAccountData(userId, user, "");
+    }
 
+    /**
+     * 后台注销账号（docs/后台管理接口.md「三、用户管理」）：不需要验证码、不发短信，已停用的账号同样可以注销；
+     * 删除的数据与文件和用户自己注销完全相同。用户不存在 40001。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deactivateByAdmin(long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BizException.param("用户不存在");
+        }
+        deleteAccountData(userId, user, "（后台操作）");
+    }
+
+    /** 注销的数据清理（须在事务中）：先查出文件路径，再按外键顺序删除数据行，事务提交后删除文件 */
+    private void deleteAccountData(long userId, User user, String note) {
+        String phone = user.getPhone();
         Set<String> files = new LinkedHashSet<>();
         addFile(files, user.getAvatarUrl());
         recognitionMapper.selectAllImageUrlsByUser(userId).forEach(path -> addFile(files, path));
         aiMessageMapper.selectImageUrlsByUser(userId).forEach(path -> addFile(files, path));
 
+        aiMessageMapper.deleteImagesByUser(userId);
         aiMessageMapper.deleteByUser(userId);
         aiSessionMapper.deleteByUser(userId);
         recognitionMapper.deleteAllByUser(userId);
@@ -153,7 +173,7 @@ public class AccountService {
             // 用户已被并发请求删除：整体回滚
             throw new BizException(ErrorCode.TOKEN_INVALID);
         }
-        log.info("用户 {} 已注销（手机号尾号 {}），待清理文件 {} 个", userId, tail(phone), files.size());
+        log.info("用户 {} 已注销{}（手机号尾号 {}），待清理文件 {} 个", userId, note, tail(phone), files.size());
         deleteFilesAfterCommit(files);
     }
 

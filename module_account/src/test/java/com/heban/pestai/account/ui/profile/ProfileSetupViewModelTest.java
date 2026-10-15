@@ -147,6 +147,29 @@ public class ProfileSetupViewModelTest {
     }
 
     @Test
+    public void setupMode_backGoesToRecoveryGuideWithoutUserMeOrEditEvents() {
+        List<ProfileEditEvent> editEvents = TestEnv.record(vm.getEditEvent());
+        assertFalse(vm.isEditMode());
+        assertEquals(Boolean.FALSE, vm.getEditMode().getValue());
+        assertEquals(0, env.api.meCount);   // 完善资料模式不请求 user/me
+
+        vm.getNickname().setValue("老李");   // 有修改也不确认：返回等同「跳过」
+        vm.onBack();
+
+        assertEquals(Collections.singletonList(LoginEvent.GO_RECOVERY_GUIDE), done);
+        assertTrue(editEvents.isEmpty());
+        assertEquals(0, env.api.updateProfileCount);
+    }
+
+    @Test
+    public void setupMode_saveSuccess_goesToRecoveryGuideOnly() {
+        List<ProfileEditEvent> editEvents = TestEnv.record(vm.getEditEvent());
+        vm.save();
+        assertEquals(Collections.singletonList(LoginEvent.GO_RECOVERY_GUIDE), done);
+        assertTrue(editEvents.isEmpty());
+    }
+
+    @Test
     public void leaveEvent_emittedOnlyOnce() {
         vm.skip();
         vm.skip();          // 快速连按返回键

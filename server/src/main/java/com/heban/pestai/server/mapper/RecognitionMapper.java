@@ -35,14 +35,19 @@ public interface RecognitionMapper {
     /** 逻辑删除：条件 id、user_id 且 deleted = 0 */
     int logicDelete(@Param("id") Long id, @Param("userId") Long userId, @Param("now") LocalDateTime now);
 
-    /** 重新识别成功：覆盖识别字段，fail_reason 置空；条件 id、user_id、deleted = 0 */
+    /** 重新识别成功：覆盖识别字段（含 model、fallback），fail_reason 置空；条件 id、user_id、deleted = 0 */
     int updateResult(Recognition recognition);
 
-    /** 重新识别失败（原记录本身是失败记录）：只更新 status、fail_reason */
+    /**
+     * 重新识别失败（原记录本身是失败记录）：只更新 status、fail_reason，以及给出结果的模型
+     * （照片不清晰时为该模型与是否备用；识别失败时 model 为 null、fallback 为 false）
+     */
     int updateFailure(@Param("id") Long id,
                       @Param("userId") Long userId,
                       @Param("status") String status,
                       @Param("failReason") String failReason,
+                      @Param("model") String model,
+                      @Param("fallback") boolean fallback,
                       @Param("now") LocalDateTime now);
 
     /** 我的页统计：total、pest_kinds、month_count 一次聚合 */

@@ -3,12 +3,9 @@ package com.heban.pestai.ai.data;
 import com.heban.pestai.common.vo.SessionDetailVO;
 import com.heban.pestai.common.vo.SessionItemVO;
 import com.heban.pestai.common.vo.SessionVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 import com.heban.pestai.common.vo.UploadVO;
 import com.heban.pestai.network.ApiResponse;
 import com.heban.pestai.network.PageVO;
-
-import java.util.List;
 
 import io.reactivex.rxjava3.core.Single;
 import okhttp3.MultipartBody;
@@ -25,10 +22,6 @@ import retrofit2.http.Query;
  * AI 问答的普通接口（默认 Retrofit，读取超时 30 秒）。流式回答见 {@link AiStreamApi}。
  */
 public interface AiApi {
-
-    /** 大家常问（游客不调用） */
-    @GET("ai/suggestions")
-    Single<ApiResponse<List<SuggestionVO>>> suggestions();
 
     /** 新建会话：追问识别结果时带 record_id，普通对话为空对象 */
     @POST("ai/sessions")
@@ -55,4 +48,12 @@ public interface AiApi {
     /** 删除会话与全部消息（幂等）；响应 data 为 null */
     @DELETE("ai/sessions/{id}")
     Single<ApiResponse<Void>> deleteSession(@Path("id") long sessionId);
+
+    /**
+     * 语音识别（输入栏语音输入的「按住 说话」）：multipart 字段名 audio，WAV（PCM 16 位、16kHz、单声道），≤ 60 秒、≤ 2MB。
+     * 没识别出文字 40001「没有听清，请再说一遍」；超过频率 42901；识别服务不可用 50201。音频只用于本次识别，不保存。
+     */
+    @Multipart
+    @POST("ai/asr")
+    Single<ApiResponse<AsrVO>> recognizeSpeech(@Part MultipartBody.Part audio);
 }

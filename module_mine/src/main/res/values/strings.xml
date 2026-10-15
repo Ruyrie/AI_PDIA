@@ -11,6 +11,7 @@
     <string name="mine_title">我的</string>
     <string name="mine_not_logged_in">未登录</string>
     <string name="mine_login_register">登录 / 注册</string>
+    <string name="mine_edit_profile">编辑资料</string>
     <string name="mine_stat_total">累计识别</string>
     <string name="mine_stat_pest_kinds">识别出的病虫害</string>
     <string name="mine_stat_ai">AI 问答</string>
@@ -53,6 +54,14 @@
     <string name="mine_privacy_policy">隐私政策</string>
     <string name="mine_about_footer">识别结果与 AI 回答由大模型生成，仅供参考\n照片仅用于识别，不会公开展示</string>
     <string name="mine_not_open">功能尚未开放</string>
+    <!-- M03 隐藏的服务器设置（连续点击版本号 5 次） -->
+    <string name="mine_server_title">服务器地址</string>
+    <string name="mine_server_hint">如 47.100.1.2 或 47.100.1.2:8080</string>
+    <string name="mine_server_default">默认：%1$s</string>
+    <string name="mine_server_save">保存</string>
+    <string name="mine_server_reset">恢复默认</string>
+    <string name="mine_server_invalid">地址格式不正确</string>
+    <string name="mine_server_changed">服务器地址已更改，请重新登录</string>
 
     <!-- 协议页 -->
     <string name="mine_agreement_load_failed">协议内容加载失败，请稍后重试</string>

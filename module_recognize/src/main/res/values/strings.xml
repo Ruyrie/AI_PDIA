@@ -48,7 +48,6 @@
     <string name="scan_step_done">已完成</string>
     <string name="scan_analyzing_duration">通常需要 3–8 秒，网络较慢时会更久</string>
     <string name="scan_analyzing_cancel">取消识别</string>
-    <string name="scan_analyzing_view_result">查看结果</string>
     <string name="scan_analyzing_confirm_title">要取消本次识别吗？</string>
     <string name="scan_analyzing_confirm_message">照片正在分析中，取消后本次不会得到识别结果。</string>
     <string name="scan_analyzing_confirm_continue">继续识别</string>
@@ -68,11 +67,19 @@
     <string name="scan_result_confidence">匹配度 %1$d%%</string>
     <string name="scan_result_evidence">识别依据</string>
     <string name="scan_result_others">其他可能</string>
+    <string name="scan_result_others_hint">点按查看判断依据</string>
+    <string name="scan_result_other_reason">为什么可能是它</string>
+    <string name="scan_result_other_difference">与%1$s的区别</string>
+    <string name="scan_result_other_difference_default">与识别结果的区别</string>
+    <string name="scan_result_other_expanded">已展开</string>
+    <string name="scan_result_other_collapsed">已收起</string>
+    <!-- 可展开行的无障碍朗读：名称，匹配度 6%，已展开 / 已收起 -->
+    <string name="scan_result_other_desc">%1$s，匹配度 %2$s，%3$s</string>
+    <string name="scan_result_other_action_expand">查看判断依据</string>
+    <string name="scan_result_other_action_collapse">收起判断依据</string>
     <string name="scan_result_footer">由 %1$s 识别 · 结果仅供参考，已保存到识别记录</string>
-    <string name="scan_result_retry">重新识别</string>
-    <string name="scan_result_retrying">识别中…</string>
+    <string name="scan_result_continue">继续识别</string>
     <string name="scan_result_ask_ai">追问 AI</string>
-    <string name="scan_result_retry_success">已重新识别，结果已更新</string>
     <string name="scan_result_not_found">该识别记录不存在或已删除</string>
     <string name="scan_result_reload">重试</string>
     <string name="scan_result_back">返回</string>

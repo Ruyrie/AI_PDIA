@@ -7,59 +7,53 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.heban.pestai.ai.chat.ChatArgs;
+import com.heban.pestai.ai.compose.ComposerButtons;
+import com.heban.pestai.ai.compose.ImageComposer;
+import com.heban.pestai.ai.compose.ImageQueue;
+import com.heban.pestai.ai.compose.InputMode;
+import com.heban.pestai.ai.compose.InputModeStore;
+import com.heban.pestai.ai.compose.PendingImage;
+import com.heban.pestai.ai.compose.VoiceComposer;
 import com.heban.pestai.ai.data.AiRepository;
 import com.heban.pestai.ai.util.AiConstants;
 import com.heban.pestai.ai.util.AiFormat;
+import com.heban.pestai.ai.voice.VoiceRecognizer;
 import com.heban.pestai.base.BaseViewModel;
 import com.heban.pestai.base.SingleLiveEvent;
-import com.heban.pestai.base.UiState;
-import com.heban.pestai.common.constant.RecognitionStatus;
-import com.heban.pestai.common.vo.RecordItemVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.File;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
-
 /**
- * Q01 新对话：大家常问、最近识别、输入与待发送图片、提问模板、三张能力卡片的直达操作、游客判断。
- * Q01 只负责「发起」，发送、点大家常问、点继续追问、选择要追问的识别记录都发出 OPEN_CHAT 事件打开 Q02，
- * 对话逻辑只在 ChatViewModel 中。
+ * Q01 新对话：输入栏（文字与待发送图片）、游客判断、右上角历史对话。
+ * Q01 只负责「发起」：发送时发出 OPEN_CHAT 事件打开 Q02（带上文字与已上传的图片），对话逻辑只在 ChatViewModel 中。
  * <ul>
- *     <li>「文字提问」：输入框获得焦点并弹出键盘，输入栏上方显示提问模板；点模板填入输入框（不发送）；
- *     发送、清空输入或收起键盘后模板行隐藏；</li>
- *     <li>「带图提问」：弹出「拍照 / 从相册选择」；选好照片后作为待发送图片，输入框获得焦点；</li>
- *     <li>「追问结果」：弹出最近 10 条中识别成功的记录，点一条打开 Q02 追问；没有记录时可去拍照识别；</li>
- *     <li>右上角「历史对话」打开 Q03。游客的以上操作都弹出「登录后才能使用」。</li>
+ *     <li>输入栏（{@link ImageComposer}）：相机直接拍照、「+」直接打开相册多选；选好的照片加入 {@link ImageQueue}
+ *     （最多 9 张）并立即上传，输入框获得焦点；全部上传完成才能发送，Q02 直接使用上传好的地址；</li>
+ *     <li>按钮显示规则见 {@link ComposerButtons}（文字输入：有文字只显示发送，没有文字时显示相机、麦克风与「+」，有图片再加发送；
+ *     语音输入：相机、「按住 说话」、键盘与「+」，有图片或隐藏的草稿时再加发送）；</li>
+ *     <li>输入方式（{@link InputMode}）：打开页面、发送后、回到页面（onResume）时为记住的方式；麦克风 / 键盘图标切换并记住；</li>
+ *     <li>语音输入（{@link VoiceComposer}）：录音交给 {@link VoiceRecognizer} 上传识别，文字追加到输入框并临时切到文字
+ *     （页面弹出键盘方便修改），不自动发送；</li>
+ *     <li>游客：输入框、相机、麦克风 / 键盘、「按住 说话」、「+」、发送与历史对话都弹出「登录后才能使用」。</li>
  * </ul>
  */
-public class AskAiViewModel extends BaseViewModel {
+public class AskAiViewModel extends BaseViewModel implements ImageComposer, VoiceComposer {
 
     /** 一次性事件 */
     public static final class Event {
         public static final int NEED_LOGIN = 1;
         public static final int OPEN_CHAT = 2;
-        /** 打开系统照片选择器 */
+        /** 打开系统照片选择器（最多可选张数由页面向 ViewModel 查询） */
         public static final int PICK_IMAGE = 3;
         /** 打开 Q03 历史对话 */
         public static final int OPEN_HISTORY = 4;
         /** 输入框获得焦点（光标在末尾）并弹出键盘 */
         public static final int FOCUS_INPUT = 5;
-        /** 弹出「拍照 / 从相册选择 / 取消」 */
-        public static final int SHOW_IMAGE_SOURCE = 6;
         /** 申请相机权限后打开系统相机 */
-        public static final int TAKE_PHOTO = 7;
-        /** 弹出「选择要追问的识别记录」 */
-        public static final int SHOW_RECORD_PICKER = 8;
-        /** 没有识别记录时「去拍照识别」（S01） */
-        public static final int OPEN_SCAN = 9;
+        public static final int TAKE_PHOTO = 6;
 
         public final int type;
         @Nullable
@@ -73,100 +67,64 @@ public class AskAiViewModel extends BaseViewModel {
 
     private final AiRepository repository;
 
-    private final MutableLiveData<List<SuggestionVO>> suggestions = new MutableLiveData<>(Collections.emptyList());
-    /** 大家常问区域：LOADING 显示占位条 / SUCCESS / EMPTY 隐藏整个区域 */
-    private final MutableLiveData<UiState> suggestionState = new MutableLiveData<>(UiState.LOADING);
-    private final MutableLiveData<RecordItemVO> latestRecord = new MutableLiveData<>();
-    private final MutableLiveData<String> latestLabel = new MutableLiveData<>("");
-    private final MutableLiveData<String> latestTitle = new MutableLiveData<>("");
     private final MutableLiveData<String> inputText = new MutableLiveData<>("");
-    /** 待发送图片的本地 Uri 字符串 */
-    private final MutableLiveData<String> pendingImage = new MutableLiveData<>();
-    private final MediatorLiveData<Boolean> canSend = new MediatorLiveData<>();
+    /** 输入栏上方的待发送图片（选好即上传） */
+    private final ImageQueue images;
+    /** 语音识别（「按住 说话」录好的 WAV） */
+    private final VoiceRecognizer voice;
+    /** 输入方式（文字 / 语音） */
+    private final InputMode inputMode;
+    /** 输入栏按钮显示状态 */
+    private final MediatorLiveData<ComposerButtons> composerButtons = new MediatorLiveData<>();
     private final MutableLiveData<Boolean> guest = new MutableLiveData<>();
     private final SingleLiveEvent<Event> event = new SingleLiveEvent<>();
-    /** 输入栏上方的提问模板行 */
-    private final MediatorLiveData<Boolean> templatesVisible = new MediatorLiveData<>();
-    /** 「选择要追问的识别记录」列表：识别成功的最近记录 */
-    private final MutableLiveData<List<RecordItemVO>> recordChoices = new MutableLiveData<>(Collections.emptyList());
-    /** 记录列表状态：LOADING / SUCCESS / EMPTY / ERROR */
-    private final MutableLiveData<UiState> recordChoiceState = new MutableLiveData<>(UiState.LOADING);
-
-    private boolean suggestionsLoaded;
-    @Nullable
-    private Disposable suggestionTask;
-    @Nullable
-    private Disposable latestTask;
-    @Nullable
-    private Disposable choiceTask;
-    /** 上一次输入框是否有文字（从有到无即「清空输入」） */
-    private boolean hadText;
 
     @Inject
-    public AskAiViewModel(@NonNull AiRepository repository) {
+    public AskAiViewModel(@NonNull AiRepository repository, @NonNull InputModeStore inputModeStore) {
         this.repository = repository;
+        this.images = new ImageQueue(repository, this::showToast);
+        this.voice = new VoiceRecognizer(repository, this::onRecognized, this::showToast);
+        this.inputMode = new InputMode(inputModeStore, this::showToast);
         guest.setValue(repository.isGuest());
-        canSend.setValue(false);
-        canSend.addSource(inputText, v -> updateCanSend());
-        canSend.addSource(pendingImage, v -> updateCanSend());
-        templatesVisible.setValue(false);
-        templatesVisible.addSource(inputText, this::onInputChanged);
+        updateButtons();
+        composerButtons.addSource(inputText, v -> updateButtons());
+        composerButtons.addSource(images.getItems(), v -> updateButtons());
+        composerButtons.addSource(inputMode.getVoice(), v -> updateButtons());
     }
 
     // ==================== 对外数据 ====================
 
-    public LiveData<List<SuggestionVO>> getSuggestions() {
-        return suggestions;
-    }
-
-    public LiveData<UiState> getSuggestionState() {
-        return suggestionState;
-    }
-
-    public LiveData<RecordItemVO> getLatestRecord() {
-        return latestRecord;
-    }
-
-    public LiveData<String> getLatestLabel() {
-        return latestLabel;
-    }
-
-    public LiveData<String> getLatestTitle() {
-        return latestTitle;
-    }
-
+    @NonNull
+    @Override
     public MutableLiveData<String> getInputText() {
         return inputText;
     }
 
-    public LiveData<String> getPendingImage() {
-        return pendingImage;
+    @NonNull
+    @Override
+    public LiveData<List<PendingImage>> getImages() {
+        return images.getItems();
     }
 
-    public LiveData<Boolean> getCanSend() {
-        return canSend;
+    @NonNull
+    @Override
+    public LiveData<Integer> getImageCount() {
+        return images.getCount();
+    }
+
+    @NonNull
+    @Override
+    public LiveData<ComposerButtons> getComposerButtons() {
+        return composerButtons;
+    }
+
+    /** 照片选择器本次最多可选张数 */
+    public int remainingImages() {
+        return images.remaining();
     }
 
     public LiveData<Boolean> getGuest() {
         return guest;
-    }
-
-    public LiveData<Boolean> getTemplatesVisible() {
-        return templatesVisible;
-    }
-
-    /** 提问模板（「文字提问」卡片） */
-    @NonNull
-    public List<String> getTemplates() {
-        return AiConstants.questionTemplates();
-    }
-
-    public LiveData<List<RecordItemVO>> getRecordChoices() {
-        return recordChoices;
-    }
-
-    public LiveData<UiState> getRecordChoiceState() {
-        return recordChoiceState;
     }
 
     public LiveData<Event> getEvent() {
@@ -177,89 +135,19 @@ public class AskAiViewModel extends BaseViewModel {
         return Boolean.TRUE.equals(guest.getValue());
     }
 
-    // ==================== 数据加载 ====================
-
-    /** Fragment onResume：登录态变化时重新加载大家常问；每次回到前台刷新最近识别 */
+    /**
+     * Fragment onResume：登录 / 退出登录后回到本页，更新游客状态（输入框是否可获得焦点）；
+     * 输入方式同步为记住的方式（可能在 Q02 中切换过；识别后临时的文字输入保持不变）。
+     */
     public void onResume() {
         boolean nowGuest = repository.isGuest();
         if (nowGuest != isGuest()) {
             guest.setValue(nowGuest);
-            suggestionsLoaded = false;
-            loadSuggestions();
         }
-        refreshLatest();
+        inputMode.syncRemembered();
     }
 
-    /** 只请求一次（切换 Tab、旋转屏幕不重复请求）；游客或失败时使用内置问题 */
-    public void loadSuggestions() {
-        if (suggestionsLoaded) {
-            return;
-        }
-        suggestionsLoaded = true;
-        dispose(suggestionTask);
-        if (isGuest()) {
-            suggestions.setValue(AiConstants.defaultSuggestions());
-            suggestionState.setValue(UiState.SUCCESS);
-            return;
-        }
-        suggestionState.setValue(UiState.LOADING);
-        suggestionTask = repository.suggestions()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::showSuggestions, error -> {
-                    // 加载失败不提示，使用内置的 3 条默认问题
-                    suggestions.setValue(AiConstants.defaultSuggestions());
-                    suggestionState.setValue(UiState.SUCCESS);
-                });
-        add(suggestionTask);
-    }
-
-    private void showSuggestions(@Nullable List<SuggestionVO> list) {
-        List<SuggestionVO> result = new ArrayList<>();
-        if (list != null) {
-            for (SuggestionVO s : list) {
-                if (s != null && !AiFormat.isBlank(s.getText())) {
-                    result.add(s);
-                    if (result.size() == AiConstants.SUGGESTION_COUNT) {
-                        break;
-                    }
-                }
-            }
-        }
-        suggestions.setValue(Collections.unmodifiableList(result));
-        suggestionState.setValue(result.isEmpty() ? UiState.EMPTY : UiState.SUCCESS);
-    }
-
-    /** 最近一次识别：只取 1 条且必须是 SUCCESS；游客、没有记录、读取失败时隐藏卡片 */
-    public void refreshLatest() {
-        dispose(latestTask);
-        if (isGuest()) {
-            setLatest(null);
-            return;
-        }
-        latestTask = repository.recentRecords(1)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(list -> setLatest(firstSuccess(list)), error -> setLatest(null));
-        add(latestTask);
-    }
-
-    @Nullable
-    private static RecordItemVO firstSuccess(@Nullable List<RecordItemVO> list) {
-        if (list == null || list.isEmpty()) {
-            return null;
-        }
-        RecordItemVO first = list.get(0);
-        return first != null && RecognitionStatus.SUCCESS.equals(first.getStatus()) ? first : null;
-    }
-
-    private void setLatest(@Nullable RecordItemVO record) {
-        latestRecord.setValue(record);
-        latestLabel.setValue(record == null ? "" : AiFormat.latestLabel(record, LocalDateTime.now()));
-        latestTitle.setValue(record == null ? "" : AiFormat.latestTitle(record));
-    }
-
-    // ==================== 用户操作 ====================
+    // ==================== 输入与发送 ====================
 
     /** 游客点击输入框：不弹键盘，弹出登录对话框（登录用户的输入框自己获得焦点） */
     public void onInputClick() {
@@ -268,180 +156,190 @@ public class AskAiViewModel extends BaseViewModel {
         }
     }
 
-    public void onPickImageClick() {
-        event.setValue(new Event(isGuest() ? Event.NEED_LOGIN : Event.PICK_IMAGE, null));
+    /** 右侧发送按钮（Q01 没有停止状态） */
+    @Override
+    public void onActionClick() {
+        send();
     }
 
+    /**
+     * 发送：打开 Q02 并带上文字与已上传的图片（本地 Uri + 地址）；语音输入时发送隐藏的草稿 + 图片。
+     * 有图片还在上传、或有图片上传失败时不发送并提示；发送后清空输入框与图片队列，输入方式回到记住的方式。
+     */
     public void send() {
         if (isGuest()) {
             event.setValue(new Event(Event.NEED_LOGIN, null));
             return;
         }
         String text = AiFormat.trim(inputText.getValue());
-        String image = pendingImage.getValue();
-        if (text.isEmpty() && image == null) {
+        if (text.isEmpty() && images.isEmpty()) {
             return;
         }
-        event.setValue(new Event(Event.OPEN_CHAT, ChatArgs.ofQuestion(text, image)));
+        if (images.isUploading()) {
+            showToast(AiConstants.TOAST_IMAGES_UPLOADING);
+            return;
+        }
+        if (images.hasFailed()) {
+            showToast(AiConstants.TOAST_IMAGES_FAILED);
+            return;
+        }
+        event.setValue(new Event(Event.OPEN_CHAT,
+                ChatArgs.ofQuestion(text, images.uploadedLocalUris(), images.uploadedUrls())));
         inputText.setValue("");
-        pendingImage.setValue(null);
-        templatesVisible.setValue(false);
+        images.clear();
+        inputMode.restore();
     }
 
-    public void askSuggestion(@NonNull SuggestionVO suggestion) {
+    // ==================== 输入栏图片 ====================
+
+    /** 相机按钮：页面申请相机权限后打开系统相机 */
+    @Override
+    public void onCameraClick() {
+        if (checkCanAddImage()) {
+            event.setValue(new Event(Event.TAKE_PHOTO, null));
+        }
+    }
+
+    /** 「+」按钮：页面按 {@link #remainingImages()} 打开照片选择器 */
+    @Override
+    public void onAlbumClick() {
+        if (checkCanAddImage()) {
+            event.setValue(new Event(Event.PICK_IMAGE, null));
+        }
+    }
+
+    /**
+     * 拍照 / 相册选好照片：加入队列并立即上传（超出 9 张的部分丢弃并提示），输入框获得焦点
+     * （提示文字变为「描述这张照片的问题…」/「描述这些照片的问题…」）。
+     */
+    public void onImagesPicked(@NonNull List<String> uris) {
         if (isGuest()) {
+            return;
+        }
+        if (images.add(uris) > 0) {
+            event.setValue(new Event(Event.FOCUS_INPUT, null));
+        }
+    }
+
+    @Override
+    public void removeImage(long id) {
+        images.remove(id);
+    }
+
+    @Override
+    public void retryImage(long id) {
+        images.retry(id);
+    }
+
+    /** 游客弹出登录；已满 9 张提示「最多只能添加 9 张图片」 */
+    private boolean checkCanAddImage() {
+        if (isGuest()) {
+            event.setValue(new Event(Event.NEED_LOGIN, null));
+            return false;
+        }
+        if (images.isFull()) {
+            showToast(AiConstants.TOAST_TOO_MANY_IMAGES);
+            return false;
+        }
+        return true;
+    }
+
+    // ==================== 语音输入 ====================
+
+    @NonNull
+    @Override
+    public LiveData<Boolean> getVoiceMode() {
+        return inputMode.getVoice();
+    }
+
+    /** 点按麦克风 / 键盘图标：游客弹出登录；否则切换（文字 → 语音没有权限时返回 true，由页面申请） */
+    @Override
+    public boolean onToggleInputMode(boolean micGranted) {
+        if (isGuest()) {
+            event.setValue(new Event(Event.NEED_LOGIN, null));
+            return false;
+        }
+        return inputMode.toggle(micGranted);
+    }
+
+    @Override
+    public void onMicPermissionResult(boolean granted) {
+        inputMode.onPermissionResult(granted);
+    }
+
+    /** 按下「按住 说话」：游客弹出登录；识别中忽略 */
+    @Override
+    public boolean onVoicePress() {
+        if (isGuest()) {
+            event.setValue(new Event(Event.NEED_LOGIN, null));
+            return false;
+        }
+        return !voice.isRecognizing();
+    }
+
+    @Override
+    public void onVoiceTooShort() {
+        showToast(AiConstants.TOAST_VOICE_TOO_SHORT);
+    }
+
+    @Override
+    public void onVoiceUnavailable() {
+        showToast(AiConstants.TOAST_MIC_UNAVAILABLE);
+    }
+
+    /** 录音完成：上传识别（成功见 {@link #onRecognized}）；游客（录音期间退出登录）删除录音并弹出登录 */
+    @Override
+    public void recognizeSpeech(@NonNull File wav) {
+        if (isGuest()) {
+            VoiceRecognizer.deleteQuietly(wav);
             event.setValue(new Event(Event.NEED_LOGIN, null));
             return;
         }
-        if (!AiFormat.isBlank(suggestion.getText())) {
-            event.setValue(new Event(Event.OPEN_CHAT, ChatArgs.ofQuestion(suggestion.getText().trim(), null)));
-        }
+        voice.recognize(wav);
     }
 
-    /** 点击最近识别卡 / 「继续追问」：带 record_id 打开 Q02 */
-    public void continueAsk() {
-        if (isGuest()) {
-            event.setValue(new Event(Event.NEED_LOGIN, null));
-            return;
-        }
-        RecordItemVO record = latestRecord.getValue();
-        if (record != null) {
-            event.setValue(new Event(Event.OPEN_CHAT, ChatArgs.ofRecord(record.getId())));
-        }
+    @NonNull
+    @Override
+    public LiveData<Boolean> getVoiceRecognizing() {
+        return voice.getRecognizing();
     }
 
-    public void setPendingImage(@Nullable String uri) {
-        pendingImage.setValue(uri);
+    @NonNull
+    @Override
+    public LiveData<String> getVoiceText() {
+        return voice.getText();
     }
 
-    public void clearPendingImage() {
-        pendingImage.setValue(null);
+    /**
+     * 识别成功（{@link VoiceRecognizer} 回调，随后发出 {@link #getVoiceText()} 事件）：文字追加到输入框草稿之后，
+     * 临时切到文字输入（不改变记住的方式），页面让输入框获得焦点并弹出键盘，方便修改后再发送。
+     */
+    private void onRecognized(@NonNull String text) {
+        String draft = inputText.getValue();
+        inputText.setValue(AiFormat.isBlank(draft) ? text : draft + text);
+        inputMode.showTextTemporarily();
     }
 
-    /** 拍照 / 相册选好照片：作为待发送图片，输入框获得焦点（提示文字变为「描述这张照片的问题…」） */
-    public void onImagePicked(@NonNull String uri) {
-        pendingImage.setValue(uri);
-        event.setValue(new Event(Event.FOCUS_INPUT, null));
-    }
-
-    // ==================== 顶部栏与能力卡片 ====================
+    // ==================== 顶部栏 ====================
 
     /** 右上角「历史对话」 */
     public void onHistoryClick() {
         event.setValue(new Event(isGuest() ? Event.NEED_LOGIN : Event.OPEN_HISTORY, null));
     }
 
-    /** 「文字提问」：输入框获得焦点、弹出键盘，并显示提问模板 */
-    public void onTextCardClick() {
-        if (isGuest()) {
-            event.setValue(new Event(Event.NEED_LOGIN, null));
-            return;
-        }
-        templatesVisible.setValue(true);
-        event.setValue(new Event(Event.FOCUS_INPUT, null));
-    }
-
-    /** 点提问模板：填入输入框（不直接发送），光标在末尾 */
-    public void onTemplateClick(@NonNull String template) {
-        if (isGuest()) {
-            event.setValue(new Event(Event.NEED_LOGIN, null));
-            return;
-        }
-        inputText.setValue(template);
-        event.setValue(new Event(Event.FOCUS_INPUT, null));
-    }
-
-    /** 收起键盘：隐藏模板行 */
-    public void onKeyboardHidden() {
-        if (Boolean.TRUE.equals(templatesVisible.getValue())) {
-            templatesVisible.setValue(false);
+    /** 有文字或有图片即显示发送按钮（图片还在上传时点按会提示）；Q01 不会生成中、总是就绪 */
+    private void updateButtons() {
+        ComposerButtons value = ComposerButtons.of(inputText.getValue(), images.size(), false, true,
+                inputMode.isVoice());
+        if (!value.equals(composerButtons.getValue())) {
+            composerButtons.setValue(value);
         }
     }
 
-    /** 「带图提问」：弹出拍照 / 从相册选择 */
-    public void onImageCardClick() {
-        event.setValue(new Event(isGuest() ? Event.NEED_LOGIN : Event.SHOW_IMAGE_SOURCE, null));
-    }
-
-    /** 选择「拍照」：页面申请相机权限后打开系统相机 */
-    public void onTakePhoto() {
-        event.setValue(new Event(isGuest() ? Event.NEED_LOGIN : Event.TAKE_PHOTO, null));
-    }
-
-    /** 「追问结果」：弹出最近识别成功的记录供选择，同时加载列表 */
-    public void onFollowCardClick() {
-        if (isGuest()) {
-            event.setValue(new Event(Event.NEED_LOGIN, null));
-            return;
-        }
-        loadRecordChoices();
-        event.setValue(new Event(Event.SHOW_RECORD_PICKER, null));
-    }
-
-    /** 加载最近 10 条识别记录，只保留识别成功的（打开记录选择框、加载失败点「重试」时调用） */
-    public void loadRecordChoices() {
-        dispose(choiceTask);
-        recordChoiceState.setValue(UiState.LOADING);
-        choiceTask = repository.recentRecords(AiConstants.RECENT_RECORD_COUNT)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(list -> {
-                    List<RecordItemVO> result = successOnly(list);
-                    recordChoices.setValue(result);
-                    recordChoiceState.setValue(result.isEmpty() ? UiState.EMPTY : UiState.SUCCESS);
-                }, error -> {
-                    recordChoices.setValue(Collections.emptyList());
-                    recordChoiceState.setValue(UiState.ERROR);
-                });
-        add(choiceTask);
-    }
-
-    /** 选中一条识别记录：打开 Q02 追问该记录 */
-    public void pickRecord(@NonNull RecordItemVO record) {
-        if (isGuest()) {
-            event.setValue(new Event(Event.NEED_LOGIN, null));
-            return;
-        }
-        event.setValue(new Event(Event.OPEN_CHAT, ChatArgs.ofRecord(record.getId())));
-    }
-
-    /** 没有识别记录时「去拍照识别」 */
-    public void openScan() {
-        event.setValue(new Event(Event.OPEN_SCAN, null));
-    }
-
-    @NonNull
-    static List<RecordItemVO> successOnly(@Nullable List<RecordItemVO> list) {
-        List<RecordItemVO> result = new ArrayList<>();
-        if (list != null) {
-            for (RecordItemVO r : list) {
-                if (r != null && RecognitionStatus.SUCCESS.equals(r.getStatus())) {
-                    result.add(r);
-                }
-            }
-        }
-        return Collections.unmodifiableList(result);
-    }
-
-    /** 输入从有文字变为空（清空输入）时隐藏模板行 */
-    private void onInputChanged(@Nullable String text) {
-        boolean has = text != null && !text.isEmpty();
-        if (hadText && !has && Boolean.TRUE.equals(templatesVisible.getValue())) {
-            templatesVisible.setValue(false);
-        }
-        hadText = has;
-    }
-
-    private void updateCanSend() {
-        boolean value = !AiFormat.isBlank(inputText.getValue()) || pendingImage.getValue() != null;
-        if (!Boolean.valueOf(value).equals(canSend.getValue())) {
-            canSend.setValue(value);
-        }
-    }
-
-    private void dispose(@Nullable Disposable task) {
-        if (task != null) {
-            disposables.remove(task);
-        }
+    @Override
+    protected void onCleared() {
+        images.dispose();
+        voice.dispose();
+        super.onCleared();
     }
 }

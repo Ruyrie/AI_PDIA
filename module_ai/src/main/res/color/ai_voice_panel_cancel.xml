@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 录音浮层「松开 取消」时的底色：error（红色）90% 不透明 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.9" android:color="?attr/colorError" />
+</selector>

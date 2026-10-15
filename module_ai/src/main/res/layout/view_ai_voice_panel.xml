@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「按住 说话」录音浮层（VoicePanel 加到页面内容区最上层，水平居中、位于输入栏上方 16dp；不拦截触摸）。
+     深色半透明圆角卡片：音量条（识别中换成转圈）· 计时「0:05」· 提示「松开 识别 · 上滑 取消」；
+     上滑进入取消区时卡片变为红色半透明、提示「松开 取消」；50 秒起提示「还能说 N 秒」 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/ai_voice_panel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/ai_bg_voice_panel"
+    android:backgroundTint="@color/ai_voice_panel"
+    android:clickable="false"
+    android:focusable="false"
+    android:gravity="center_horizontal"
+    android:minWidth="176dp"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="16dp">
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="48dp">
+
+        <com.heban.pestai.ai.voice.VoiceBarsView
+            android:id="@+id/ai_voice_bars"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent" />
+
+        <!-- 识别中：32dp 转圈，与音量条同位置 -->
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/ai_voice_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="?attr/colorOnSurfaceInverse"
+            app:indicatorSize="32dp"
+            app:trackThickness="3dp" />
+    </FrameLayout>
+
+    <!-- 计时：等宽数字，避免每秒跳动 -->
+    <TextView
+        android:id="@+id/ai_voice_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFeatureSettings="tnum"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnSurfaceInverse" />
+
+    <TextView
+        android:id="@+id/ai_voice_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceInverse" />
+</LinearLayout>

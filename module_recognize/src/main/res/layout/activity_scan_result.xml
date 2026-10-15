@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- R01 识别结果：照片区（识别框 + 模式与时间标签）、结论卡、识别依据、其他可能；底部「重新识别」「追问 AI」 -->
+<!-- R01 识别结果：照片区（识别框 + 模式与时间标签）、结论卡、识别依据、其他可能（可展开判断依据）；
+     底部「继续识别」（回到拍照页）「追问 AI」 -->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
@@ -52,7 +53,9 @@
                 android:visibility="gone"
                 app:visible="@{vm.uiState == UiState.SUCCESS}">
 
+                <!-- 内容区：也是「其他可能」展开 / 收起过渡的场景根 -->
                 <LinearLayout
+                    android:id="@+id/resultBody"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
@@ -294,14 +297,14 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- 其他可能 -->
+                    <!-- 其他可能：有判断依据的行可点按展开；有可展开行时标题下提示「点按查看判断依据」 -->
                     <LinearLayout
                         android:id="@+id/resultOthersGroup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:orientation="vertical"
-                        app:scanVisibleIfNotEmpty="@{vm.record.others}">
+                        app:scanVisibleIfNotEmpty="@{vm.others}">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -309,15 +312,28 @@
                             android:text="@string/scan_result_others"
                             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
+                        <TextView
+                            android:id="@+id/resultOthersHint"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/scan_result_others_hint"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone"
+                            app:visible="@{vm.othersHintVisible}" />
+
+                        <!-- clipToOutline：按压水波纹不超出 12dp 圆角 -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/resultOthers"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:background="@drawable/pest_bg_card_12"
+                            android:clipToOutline="true"
                             android:nestedScrollingEnabled="false"
                             android:overScrollMode="never"
-                            app:scanCandidates="@{vm.record.others}"
+                            app:scanCandidates="@{vm.others}"
                             tools:itemCount="2"
                             tools:listitem="@layout/item_scan_other" />
                     </LinearLayout>
@@ -404,21 +420,19 @@
                 android:paddingEnd="16dp"
                 android:paddingBottom="24dp">
 
+                <!-- 继续识别：以本记录的模式回到拍照页 S01 -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/resultRetry"
+                    android:id="@+id/resultContinue"
                     style="@style/Widget.Pest.Button.Outlined"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:enabled="@{!vm.retrying}"
-                    android:text="@{vm.retrying ? @string/scan_result_retrying : @string/scan_result_retry}"
-                    app:icon="@drawable/ic_refresh"
+                    android:text="@string/scan_result_continue"
+                    app:icon="@drawable/ic_photo_camera"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"
                     app:iconSize="18dp"
-                    app:onSafeClick="@{() -> vm.retry()}"
-                    app:scanLoading="@{vm.retrying}"
-                    tools:text="@string/scan_result_retry" />
+                    app:onSafeClick="@{() -> vm.continueScan()}" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/resultAskAi"
@@ -427,7 +441,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:enabled="@{!vm.retrying}"
                     android:text="@string/scan_result_ask_ai"
                     app:icon="@drawable/ic_auto_awesome"
                     app:iconGravity="textStart"

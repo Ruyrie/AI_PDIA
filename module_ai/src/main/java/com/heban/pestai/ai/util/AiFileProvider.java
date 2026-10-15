@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Q01「带图提问 → 拍照」使用的 FileProvider：系统相机把照片写入本组件缓存目录 ai_camera/ 下的文件。
+ * Q01 / Q02 输入栏「拍照」使用的 FileProvider：系统相机把照片写入本组件缓存目录 ai_camera/ 下的文件。
  * 单独子类化（而不是直接声明 androidx.core.content.FileProvider），避免与其他组件声明的 FileProvider 在合并清单中冲突；
  * authority 为 {@code ${applicationId}.ai.fileprovider}（见本组件 AndroidManifest.xml 与 res/xml/ai_file_paths.xml）。
  */

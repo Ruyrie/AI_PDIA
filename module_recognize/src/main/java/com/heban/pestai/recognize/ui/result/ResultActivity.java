@@ -28,8 +28,19 @@ import com.heban.pestai.recognize.util.PhotoLoader;
 /**
  * R01 识别结果。带 record_json（S02 / R02 进入）时立即显示；只带 record_id（首页、识别记录、Q02 进入）时先加载详情。
  * 入场动画：五个区块依次淡入并上移 16dp，匹配度进度条 600ms 从 0 增长到目标值；旋转屏幕后不重播。
+ * <p>
+ * 「继续识别」回到拍照页 S01（本记录的模式），并关闭 R01，相机页按返回回到进入识别前的页面：
+ * <ul>
+ *     <li>{@link #EXTRA_FROM_SCAN} 为 true（S01 → S02 → R01，S02 已关闭）：R01 正下方就是拍摄本记录的 S01，直接 finish()；</li>
+ *     <li>其他入口（首页、识别记录、Q02、首页相册直接进入 S02、R02 重新识别成功）：以 FLAG_ACTIVITY_CLEAR_TOP 打开 S01 后 finish()。
+ *     返回栈中已有 S01 时清掉它及其上的页面（包括旧结果）后新建，不会叠两个相机页；没有时在当前页面之上新建。
+ *     S01 没有处理 onNewIntent，所以不加 FLAG_ACTIVITY_SINGLE_TOP，让 S01 以新 Intent 的模式重建。</li>
+ * </ul>
  */
 public class ResultActivity extends BaseActivity implements SnackbarAnchorProvider {
+
+    /** boolean：由 S01 启动的 S02 进入 R01（R01 正下方是 S01），「继续识别」直接关闭 R01 */
+    public static final String EXTRA_FROM_SCAN = "from_scan";
 
     private static final long BLOCK_MS = 200;
     private static final long BLOCK_GAP_MS = 80;
@@ -60,7 +71,9 @@ public class ResultActivity extends BaseActivity implements SnackbarAnchorProvid
 
         binding.resultToolbar.setNavigationOnClickListener(v -> finish());
         binding.resultOthers.setLayoutManager(new LinearLayoutManager(this));
-        binding.resultOthers.setAdapter(new OtherAdapter());
+        // 展开 / 收起由 OtherAdapter 用 TransitionManager 在整个内容区上过渡（下方页脚同步移动），不用默认的条目动画
+        binding.resultOthers.setItemAnimator(null);
+        binding.resultOthers.setAdapter(new OtherAdapter(viewModel::toggleOther, binding.resultBody));
         MaterialDividerItemDecoration divider =
                 new MaterialDividerItemDecoration(this, LinearLayoutManager.VERTICAL);
         divider.setDividerColor(MaterialColors.getColor(binding.resultOthers,
@@ -73,7 +86,8 @@ public class ResultActivity extends BaseActivity implements SnackbarAnchorProvid
         viewModel.getEvent().observe(this, this::onEvent);
 
         viewModel.init(intent.getLongExtra(RouterPath.EXTRA_RECORD_ID, RouterPath.NO_RECORD),
-                intent.getStringExtra(RouterPath.EXTRA_RECORD_JSON));
+                intent.getStringExtra(RouterPath.EXTRA_RECORD_JSON),
+                intent.getBooleanExtra(EXTRA_FROM_SCAN, false));
     }
 
     private void onRecord(@Nullable RecognitionVO record) {
@@ -140,6 +154,16 @@ public class ResultActivity extends BaseActivity implements SnackbarAnchorProvid
                 break;
             case OPEN_HISTORY:
                 openPage(RouterPath.intent(this, RouterPath.HISTORY));
+                break;
+            case BACK_TO_SCAN:
+                // 正下方就是拍摄本记录的 S01（模式相同），关闭自己即回到相机
+                finish();
+                break;
+            case OPEN_SCAN:
+                startActivity(RouterPath.intent(this, RouterPath.SCAN)
+                        .putExtra(RouterPath.EXTRA_MODE, viewModel.getScanMode())
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                finish();
                 break;
             case GO_ERROR:
                 goError();

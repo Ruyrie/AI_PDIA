@@ -7,15 +7,20 @@ import com.heban.pestai.ai.util.ThinkingFormatter;
 import com.heban.pestai.common.constant.ChatRole;
 import com.heban.pestai.common.vo.RecordItemVO;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Q02 列表的界面消息模型（不可变，修改时返回新对象，便于 DiffUtil 比较）。
- * role、content、imageUrl、createdAt、reasoning（reasoning_content）、reasoningMs 与 ChatMessageVO 一致；
- * 另加只在前端使用的状态：localId（DiffUtil 判断同一条）、localUri（上传前的本地图片）、quote（引用卡）、
- * streaming、notice、imageState、latest、startedAt（发送时刻，思考计时）、reasoningExpanded（思考区是否展开）。
+ * role、content、imageUrls、createdAt、reasoning（reasoning_content）、reasoningMs 与 ChatMessageVO 一致；
+ * 另加只在前端使用的状态：localId（DiffUtil 判断同一条）、localUris（本次发送图片的本地 Uri，用于显示）、quote（引用卡）、
+ * streaming、notice、latest、startedAt（发送时刻，思考计时）、reasoningExpanded（思考区是否展开）。
+ * <p>一条用户消息的全部图片是<b>一个</b>列表项（TYPE_USER_IMAGE，九宫格显示），排在文字气泡之前；
+ * 图片在输入栏中上传完成后才发送，列表中的图片没有上传状态。</p>
  * <p>content / reasoning 是<b>已收到</b>的全部文字；逐字显示到哪里由 {@link TypingTracker} 记录。</p>
  */
 public final class ChatMessage {
@@ -35,13 +40,6 @@ public final class ChatMessage {
     /** AI 暂时没有给出回答，请换个问法试试（[DONE] 但内容为空） */
     public static final int NOTICE_EMPTY = 3;
 
-    // ---------- 用户图片的上传状态 ----------
-    /** 未上传（停止生成或会话创建失败后）：不显示遮罩 */
-    public static final int IMAGE_IDLE = 0;
-    public static final int IMAGE_UPLOADING = 1;
-    public static final int IMAGE_FAILED = 2;
-    public static final int IMAGE_DONE = 3;
-
     private static final AtomicLong IDS = new AtomicLong();
 
     private final long localId;
@@ -49,16 +47,17 @@ public final class ChatMessage {
     private final String role;
     @NonNull
     private final String content;
-    @Nullable
-    private final String imageUrl;
+    /** 用户图片项：服务器图片地址（按发送顺序）；其他类型为空列表 */
+    @NonNull
+    private final List<String> imageUrls;
+    /** 与 imageUrls 一一对应的本地 Uri（本次发送的图片）；历史消息为空列表 */
+    @NonNull
+    private final List<String> localUris;
     private final Date createdAt;
-    @Nullable
-    private final String localUri;
     @Nullable
     private final RecordItemVO quote;
     private final boolean streaming;
     private final int notice;
-    private final int imageState;
     /** 是否为列表最后一条 AI 回答（只有它显示「重新生成」） */
     private final boolean latest;
     /** 思考过程全文（已收到的部分），没有为空串 */
@@ -72,21 +71,20 @@ public final class ChatMessage {
     /** 思考区折叠后用户是否点开了 */
     private final boolean reasoningExpanded;
 
-    private ChatMessage(long localId, int type, String role, @NonNull String content, @Nullable String imageUrl,
-                        Date createdAt, @Nullable String localUri, @Nullable RecordItemVO quote, boolean streaming,
-                        int notice, int imageState, boolean latest, @NonNull String reasoning,
+    private ChatMessage(long localId, int type, String role, @NonNull String content, @NonNull List<String> imageUrls,
+                        @NonNull List<String> localUris, Date createdAt, @Nullable RecordItemVO quote,
+                        boolean streaming, int notice, boolean latest, @NonNull String reasoning,
                         @Nullable Long reasoningMs, long startedAt, boolean reasoningExpanded) {
         this.localId = localId;
         this.type = type;
         this.role = role;
         this.content = content;
-        this.imageUrl = imageUrl;
+        this.imageUrls = imageUrls;
+        this.localUris = localUris;
         this.createdAt = createdAt;
-        this.localUri = localUri;
         this.quote = quote;
         this.streaming = streaming;
         this.notice = notice;
-        this.imageState = imageState;
         this.latest = latest;
         this.reasoning = reasoning;
         this.reasoningMs = reasoningMs;
@@ -96,8 +94,8 @@ public final class ChatMessage {
 
     @NonNull
     public static ChatMessage quote(@NonNull RecordItemVO record) {
-        return new ChatMessage(IDS.incrementAndGet(), TYPE_QUOTE, ChatRole.USER, "", record.getImageUrl(),
-                new Date(), null, record, false, NOTICE_NONE, IMAGE_IDLE, false, "", null, 0, false);
+        return new ChatMessage(IDS.incrementAndGet(), TYPE_QUOTE, ChatRole.USER, "", Collections.emptyList(),
+                Collections.emptyList(), new Date(), record, false, NOTICE_NONE, false, "", null, 0, false);
     }
 
     @NonNull
@@ -107,21 +105,25 @@ public final class ChatMessage {
 
     @NonNull
     public static ChatMessage userText(@NonNull String text, @Nullable Date createdAt) {
-        return new ChatMessage(IDS.incrementAndGet(), TYPE_USER_TEXT, ChatRole.USER, text, null,
-                createdAt, null, null, false, NOTICE_NONE, IMAGE_IDLE, false, "", null, 0, false);
+        return new ChatMessage(IDS.incrementAndGet(), TYPE_USER_TEXT, ChatRole.USER, text, Collections.emptyList(),
+                Collections.emptyList(), createdAt, null, false, NOTICE_NONE, false, "", null, 0, false);
     }
 
+    /**
+     * 一条用户消息的全部图片（一个列表项）。
+     *
+     * @param localUris 与 imageUrls 一一对应的本地 Uri（本次发送时有，优先显示）；历史消息传空列表，
+     *                  长度不一致时忽略本地 Uri
+     * @param imageUrls 服务器图片地址（按发送顺序）
+     */
     @NonNull
-    public static ChatMessage userImage(@NonNull String localUri) {
-        return new ChatMessage(IDS.incrementAndGet(), TYPE_USER_IMAGE, ChatRole.USER, "", null,
-                new Date(), localUri, null, false, NOTICE_NONE, IMAGE_IDLE, false, "", null, 0, false);
-    }
-
-    /** 历史对话中已上传的图片（只有服务器地址） */
-    @NonNull
-    public static ChatMessage userRemoteImage(@NonNull String imageUrl, @Nullable Date createdAt) {
-        return new ChatMessage(IDS.incrementAndGet(), TYPE_USER_IMAGE, ChatRole.USER, "", imageUrl,
-                createdAt, null, null, false, NOTICE_NONE, IMAGE_DONE, false, "", null, 0, false);
+    public static ChatMessage userImages(@Nullable List<String> localUris, @NonNull List<String> imageUrls,
+                                         @Nullable Date createdAt) {
+        List<String> urls = immutable(imageUrls);
+        List<String> uris = immutable(localUris);
+        return new ChatMessage(IDS.incrementAndGet(), TYPE_USER_IMAGE, ChatRole.USER, "", urls,
+                uris.size() == urls.size() ? uris : Collections.<String>emptyList(), createdAt, null, false,
+                NOTICE_NONE, false, "", null, 0, false);
     }
 
     /**
@@ -131,8 +133,8 @@ public final class ChatMessage {
      */
     @NonNull
     public static ChatMessage aiPending(long startedAt) {
-        return new ChatMessage(IDS.incrementAndGet(), TYPE_AI, ChatRole.ASSISTANT, "", null,
-                new Date(), null, null, true, NOTICE_NONE, IMAGE_IDLE, false, "", null, startedAt, false);
+        return new ChatMessage(IDS.incrementAndGet(), TYPE_AI, ChatRole.ASSISTANT, "", Collections.emptyList(),
+                Collections.emptyList(), new Date(), null, true, NOTICE_NONE, false, "", null, startedAt, false);
     }
 
     /** 历史对话中的 AI 回答：有思考内容时显示折叠的「已思考 N 秒」 */
@@ -140,7 +142,7 @@ public final class ChatMessage {
     public static ChatMessage aiHistory(@Nullable String content, @Nullable String reasoning,
                                         @Nullable Integer reasoningMs, @Nullable Date createdAt) {
         return new ChatMessage(IDS.incrementAndGet(), TYPE_AI, ChatRole.ASSISTANT, content == null ? "" : content,
-                null, createdAt, null, null, false, NOTICE_NONE, IMAGE_IDLE, false,
+                Collections.emptyList(), Collections.emptyList(), createdAt, null, false, NOTICE_NONE, false,
                 reasoning == null ? "" : reasoning, reasoningMs == null ? null : reasoningMs.longValue(), 0, false);
     }
 
@@ -148,45 +150,39 @@ public final class ChatMessage {
 
     @NonNull
     public ChatMessage withContent(@NonNull String newContent) {
-        return new ChatMessage(localId, type, role, newContent, imageUrl, createdAt, localUri, quote, streaming,
-                notice, imageState, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
+        return new ChatMessage(localId, type, role, newContent, imageUrls, localUris, createdAt, quote, streaming,
+                notice, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
     }
 
     @NonNull
     public ChatMessage withReasoning(@NonNull String newReasoning) {
-        return new ChatMessage(localId, type, role, content, imageUrl, createdAt, localUri, quote, streaming,
-                notice, imageState, latest, newReasoning, reasoningMs, startedAt, reasoningExpanded);
+        return new ChatMessage(localId, type, role, content, imageUrls, localUris, createdAt, quote, streaming,
+                notice, latest, newReasoning, reasoningMs, startedAt, reasoningExpanded);
     }
 
     @NonNull
     public ChatMessage withReasoningMs(@Nullable Long newReasoningMs) {
-        return new ChatMessage(localId, type, role, content, imageUrl, createdAt, localUri, quote, streaming,
-                notice, imageState, latest, reasoning, newReasoningMs, startedAt, reasoningExpanded);
+        return new ChatMessage(localId, type, role, content, imageUrls, localUris, createdAt, quote, streaming,
+                notice, latest, reasoning, newReasoningMs, startedAt, reasoningExpanded);
     }
 
     @NonNull
     public ChatMessage withReasoningExpanded(boolean expanded) {
-        return new ChatMessage(localId, type, role, content, imageUrl, createdAt, localUri, quote, streaming,
-                notice, imageState, latest, reasoning, reasoningMs, startedAt, expanded);
+        return new ChatMessage(localId, type, role, content, imageUrls, localUris, createdAt, quote, streaming,
+                notice, latest, reasoning, reasoningMs, startedAt, expanded);
     }
 
     /** 结束生成（或出错）：streaming 改为 false，并设置末尾提示 */
     @NonNull
     public ChatMessage finish(int newNotice) {
-        return new ChatMessage(localId, type, role, content, imageUrl, createdAt, localUri, quote, false,
-                newNotice, imageState, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
-    }
-
-    @NonNull
-    public ChatMessage withImage(int newState, @Nullable String newImageUrl) {
-        return new ChatMessage(localId, type, role, content, newImageUrl, createdAt, localUri, quote, streaming,
-                notice, newState, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
+        return new ChatMessage(localId, type, role, content, imageUrls, localUris, createdAt, quote, false,
+                newNotice, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
     }
 
     @NonNull
     public ChatMessage withLatest(boolean newLatest) {
-        return new ChatMessage(localId, type, role, content, imageUrl, createdAt, localUri, quote, streaming,
-                notice, imageState, newLatest, reasoning, reasoningMs, startedAt, reasoningExpanded);
+        return new ChatMessage(localId, type, role, content, imageUrls, localUris, createdAt, quote, streaming,
+                notice, newLatest, reasoning, reasoningMs, startedAt, reasoningExpanded);
     }
 
     // ---------- 读取 ----------
@@ -208,18 +204,34 @@ public final class ChatMessage {
         return content;
     }
 
-    @Nullable
-    public String getImageUrl() {
-        return imageUrl;
+    /** 服务器图片地址（按发送顺序），非图片项为空列表 */
+    @NonNull
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    /** 本次发送图片的本地 Uri（与 imageUrls 一一对应），历史消息为空列表 */
+    @NonNull
+    public List<String> getLocalUris() {
+        return localUris;
+    }
+
+    /** 显示用的图片源：有本地 Uri 时用本地图片（发送后不重新加载、不闪白），否则用服务器地址 */
+    @NonNull
+    public List<String> getImageSources() {
+        if (localUris.isEmpty()) {
+            return imageUrls;
+        }
+        List<String> result = new ArrayList<>(imageUrls.size());
+        for (int i = 0; i < imageUrls.size(); i++) {
+            String local = localUris.get(i);
+            result.add(local != null && !local.isEmpty() ? local : imageUrls.get(i));
+        }
+        return Collections.unmodifiableList(result);
     }
 
     public Date getCreatedAt() {
         return createdAt;
-    }
-
-    @Nullable
-    public String getLocalUri() {
-        return localUri;
     }
 
     @Nullable
@@ -233,10 +245,6 @@ public final class ChatMessage {
 
     public int getNotice() {
         return notice;
-    }
-
-    public int getImageState() {
-        return imageState;
     }
 
     public boolean isLatest() {
@@ -294,6 +302,14 @@ public final class ChatMessage {
         return type == TYPE_AI && !streaming && (notice == NOTICE_NONE || notice == NOTICE_EMPTY);
     }
 
+    @NonNull
+    private static List<String> immutable(@Nullable List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(list));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -307,7 +323,6 @@ public final class ChatMessage {
                 && type == that.type
                 && streaming == that.streaming
                 && notice == that.notice
-                && imageState == that.imageState
                 && latest == that.latest
                 && startedAt == that.startedAt
                 && reasoningExpanded == that.reasoningExpanded
@@ -315,23 +330,23 @@ public final class ChatMessage {
                 && content.equals(that.content)
                 && reasoning.equals(that.reasoning)
                 && Objects.equals(reasoningMs, that.reasoningMs)
-                && Objects.equals(imageUrl, that.imageUrl)
+                && imageUrls.equals(that.imageUrls)
+                && localUris.equals(that.localUris)
                 && Objects.equals(createdAt, that.createdAt)
-                && Objects.equals(localUri, that.localUri)
                 && Objects.equals(quote, that.quote);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(localId, type, role, content, imageUrl, createdAt, localUri, quote, streaming, notice,
-                imageState, latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
+        return Objects.hash(localId, type, role, content, imageUrls, localUris, createdAt, quote, streaming, notice,
+                latest, reasoning, reasoningMs, startedAt, reasoningExpanded);
     }
 
     @NonNull
     @Override
     public String toString() {
         return "ChatMessage{" + localId + ", type=" + type + ", content='" + content + "', reasoning='" + reasoning
-                + "', streaming=" + streaming + ", notice=" + notice + ", imageState=" + imageState
+                + "', images=" + imageUrls.size() + ", streaming=" + streaming + ", notice=" + notice
                 + ", latest=" + latest + '}';
     }
 }

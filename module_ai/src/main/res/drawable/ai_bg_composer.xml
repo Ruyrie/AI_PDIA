@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q01 / Q02 输入栏胶囊：surfaceContainerHigh，圆角 26dp（最小高 52dp 时为全圆角，多行时为大圆角矩形） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceContainerHigh" />
+    <corners android:radius="26dp" />
+</shape>

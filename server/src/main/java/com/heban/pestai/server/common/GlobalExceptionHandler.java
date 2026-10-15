@@ -2,6 +2,7 @@ package com.heban.pestai.server.common;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
@@ -91,9 +92,11 @@ public class GlobalExceptionHandler {
         return param(null);
     }
 
+    /** 上传超过 2MB：语音识别接口提示「语音」，其余上传接口都是图片 */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException e) {
-        return param("图片不能超过 2MB");
+    public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException e, HttpServletRequest request) {
+        String uri = request == null ? null : request.getRequestURI();
+        return param(uri != null && uri.endsWith("/ai/asr") ? "语音不能超过 2MB" : "图片不能超过 2MB");
     }
 
     @ExceptionHandler(MultipartException.class)

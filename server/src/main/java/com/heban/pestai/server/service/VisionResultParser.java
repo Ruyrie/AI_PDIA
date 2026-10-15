@@ -25,13 +25,17 @@ import com.heban.pestai.server.vo.CandidateVO;
  *   <li>去掉可能附带的 Markdown 代码围栏，截取第一个「{」到最后一个「}」之间的文本；</li>
  *   <li>status 只能是 SUCCESS 或 IMAGE_BAD；SUCCESS 时 top_name 不能为空，confidence 在 0–1 并保留 3 位小数；</li>
  *   <li>PEST 模式 severity 必须是 健康 / 轻度 / 中度 / 较重 之一，CROP 模式 severity 置空；</li>
- *   <li>others 每条 name 非空、confidence 在 0–1（不合格的条目丢弃），按 confidence 降序最多保留 3 条。</li>
+ *   <li>others 每条 name 非空、confidence 在 0–1（不合格的条目丢弃），按 confidence 降序最多保留 3 条；
+ *       reason、difference 是说明文字，去掉首尾空白、连续空白合并为一个空格、最多保留 120 字，缺失 / 为空 / 不是文本时为 null
+ *       （旧提示词的返回没有这两个字段，照常通过）。</li>
  * </ul>
  * 不合格时抛出 {@link InvalidResultException}，由 RecognitionService 重试一次。
  */
 public final class VisionResultParser {
 
     public static final int MAX_OTHERS = 3;
+    /** others 中 reason / difference 的最大字数（提示词要求不超过 40 字，这里只防异常长的输出） */
+    public static final int MAX_NOTE = 120;
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final BigDecimal ONE = BigDecimal.ONE;
 
@@ -113,10 +117,20 @@ public final class VisionResultParser {
             if (name == null || confidence == null || !names.add(name)) {
                 continue;
             }
-            list.add(new CandidateVO(Rules.truncate(name, 50), confidence));
+            list.add(new CandidateVO(Rules.truncate(name, 50), confidence,
+                    note(item.get("reason")), note(item.get("difference"))));
         }
         list.sort(Comparator.comparing(CandidateVO::confidence).reversed());
         return list.size() > MAX_OTHERS ? new ArrayList<>(list.subList(0, MAX_OTHERS)) : list;
+    }
+
+    /** 候选项的说明文字：只接受文本，连续空白（含换行、全角空格）合并为一个空格，最多 MAX_NOTE 字；为空返回 null */
+    static String note(JsonNode node) {
+        if (node == null || !node.isTextual()) {
+            return null;
+        }
+        String text = trimToNull(node.asText().replaceAll("[\\s\\u3000]+", " "));
+        return Rules.truncate(text, MAX_NOTE);
     }
 
     /** 0–1 的小数，四舍五入保留 3 位（与 DECIMAL(4,3) 一致）；不合法返回 null */

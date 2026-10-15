@@ -43,12 +43,37 @@ public class RecognitionVoJsonTest {
         assertEquals(2, vo.getOthers().size());
         assertEquals("黄瓜细菌性角斑病", vo.getOthers().get(0).getName());
         assertEquals(0.06, vo.getOthers().get(0).getConfidence(), 1e-9);
+        // 旧记录没有判断依据
+        assertNull(vo.getOthers().get(0).getReason());
+        assertNull(vo.getOthers().get(0).getDifference());
 
         Calendar c = Calendar.getInstance();
         c.setTime(vo.getCreatedAt());
         assertEquals(2026, c.get(Calendar.YEAR));
         assertEquals(14, c.get(Calendar.HOUR_OF_DAY));
         assertEquals(20, c.get(Calendar.MINUTE));
+    }
+
+    @Test
+    public void parseOthersWithExplanation() {
+        String json = "{\"id\":1,\"status\":\"SUCCESS\",\"top_name\":\"黄瓜霜霉病\",\"others\":["
+                + "{\"name\":\"黄瓜细菌性角斑病\",\"confidence\":0.06,"
+                + "\"reason\":\"病斑同样受叶脉限制\",\"difference\":\"叶背有白色菌脓\"},"
+                + "{\"name\":\"缺镁症（生理性）\",\"confidence\":0.02,\"reason\":null}]}";
+        RecognitionVO vo = Samples.GSON.fromJson(json, RecognitionVO.class);
+        assertEquals("病斑同样受叶脉限制", vo.getOthers().get(0).getReason());
+        assertEquals("叶背有白色菌脓", vo.getOthers().get(0).getDifference());
+        assertNull(vo.getOthers().get(1).getReason());
+        assertNull(vo.getOthers().get(1).getDifference());
+    }
+
+    @Test
+    public void recordJson_roundTrip_keepsExplanation() {
+        RecognitionVO vo = Samples.explained();
+        String json = Samples.GSON.toJson(vo);
+        assertTrue(json.contains("\"reason\""));
+        assertTrue(json.contains("\"difference\""));
+        assertEquals(vo, Samples.GSON.fromJson(json, RecognitionVO.class));
     }
 
     @Test

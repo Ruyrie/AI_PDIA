@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「按住 说话」按钮文字：识别中（不可用）38% onSurface；取消区 onErrorContainer；其余 onSurface -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.38" android:color="?attr/colorOnSurface" android:state_enabled="false" />
+    <item android:color="?attr/colorOnErrorContainer" android:state_activated="true" />
+    <item android:color="?attr/colorOnSurface" />
+</selector>

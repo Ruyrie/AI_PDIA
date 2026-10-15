@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    后台数据统计。时间范围 [from, to)，库中时间为 Asia/Shanghai 本地时间，DATE(列) 即当地日期。
+    按时间范围的查询走迁移 006 新增的索引：t_user.idx_created / idx_last_login、t_recognition.idx_created、
+    t_ai_message.idx_role_created、t_sms_code.idx_created。
+-->
+<mapper namespace="com.heban.pestai.server.admin.mapper.AdminStatsMapper">
+
+    <select id="countUsers" resultType="long">
+        SELECT COUNT(*) FROM t_user
+    </select>
+
+    <select id="countUsersCreatedBetween" resultType="long">
+        SELECT COUNT(*) FROM t_user WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="countDisabledUsers" resultType="long">
+        SELECT COUNT(*) FROM t_user WHERE `status` = 1
+    </select>
+
+    <!-- 活跃用户：三类来源 UNION 去重（识别、AI 提问、最近登录时间）。last_login_at 只保存最近一次登录 -->
+    <sql id="activeUsers">
+        SELECT r.user_id
+        FROM t_recognition r
+        WHERE r.created_at &gt;= #{from} AND r.created_at &lt; #{to}
+        UNION
+        SELECT s.user_id
+        FROM t_ai_message m
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE m.`role` = 'user' AND m.created_at &gt;= #{from} AND m.created_at &lt; #{to}
+        UNION
+        SELECT u.id AS user_id
+        FROM t_user u
+        WHERE u.last_login_at &gt;= #{from} AND u.last_login_at &lt; #{to}
+    </sql>
+
+    <select id="countActiveUsersBetween" resultType="long">
+        SELECT COUNT(*) FROM (<include refid="activeUsers"/>) a
+    </select>
+
+    <select id="countRecognitions" resultType="long">
+        SELECT COUNT(*) FROM t_recognition
+    </select>
+
+    <select id="recognitionsBetween" resultType="com.heban.pestai.server.admin.entity.RangeCount">
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN `status` = 'SUCCESS' THEN 1 ELSE 0 END), 0) AS part
+        FROM t_recognition
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="countQuestions" resultType="long">
+        SELECT COUNT(*) FROM t_ai_message WHERE `role` = 'user'
+    </select>
+
+    <!-- 带图提问：t_ai_message.image_url 保存第一张图片（迁移 005） -->
+    <select id="questionsBetween" resultType="com.heban.pestai.server.admin.entity.RangeCount">
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN image_url IS NOT NULL AND image_url &lt;&gt; '' THEN 1 ELSE 0 END), 0) AS part
+        FROM t_ai_message
+        WHERE `role` = 'user' AND created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="countSmsBetween" resultType="long">
+        SELECT COUNT(*) FROM t_sms_code WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="dailyNewUsers" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT DATE(created_at) AS stat_date, COUNT(*) AS total
+        FROM t_user
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+        GROUP BY DATE(created_at)
+    </select>
+
+    <select id="dailyActiveUsers" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT a.stat_date, COUNT(*) AS total
+        FROM (
+            SELECT DATE(r.created_at) AS stat_date, r.user_id
+            FROM t_recognition r
+            WHERE r.created_at &gt;= #{from} AND r.created_at &lt; #{to}
+            UNION
+            SELECT DATE(m.created_at) AS stat_date, s.user_id
+            FROM t_ai_message m
+            JOIN t_ai_session s ON m.session_id = s.id
+            WHERE m.`role` = 'user' AND m.created_at &gt;= #{from} AND m.created_at &lt; #{to}
+            UNION
+            SELECT DATE(u.last_login_at) AS stat_date, u.id AS user_id
+            FROM t_user u
+            WHERE u.last_login_at &gt;= #{from} AND u.last_login_at &lt; #{to}
+        ) a
+        GROUP BY a.stat_date
+    </select>
+
+    <select id="dailyRecognitions" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT DATE(created_at) AS stat_date,
+               COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN `status` = 'SUCCESS' THEN 1 ELSE 0 END), 0) AS success
+        FROM t_recognition
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+        GROUP BY DATE(created_at)
+    </select>
+
+    <select id="dailyQuestions" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT DATE(created_at) AS stat_date, COUNT(*) AS total
+        FROM t_ai_message
+        WHERE `role` = 'user' AND created_at &gt;= #{from} AND created_at &lt; #{to}
+        GROUP BY DATE(created_at)
+    </select>
+
+    <select id="dailySms" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT DATE(created_at) AS stat_date, COUNT(*) AS total
+        FROM t_sms_code
+        WHERE created_at &gt;= #{from} AND created_at &lt; #{to}
+        GROUP BY DATE(created_at)
+    </select>
+
+    <!-- 模型自动备用（迁移 007）：fallback = 1 为由备用模型完成。AI 回答走 idx_role_created，识别走 idx_created -->
+    <select id="countFallbackAnswersBetween" resultType="long">
+        SELECT COUNT(*)
+        FROM t_ai_message
+        WHERE `role` = 'assistant' AND fallback = 1 AND created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <select id="countFallbackRecognitionsBetween" resultType="long">
+        SELECT COUNT(*)
+        FROM t_recognition
+        WHERE fallback = 1 AND created_at &gt;= #{from} AND created_at &lt; #{to}
+    </select>
+
+    <!-- 两类按天合并：UNION ALL 后按日期分组计数 -->
+    <select id="dailyFallbackUsed" resultType="com.heban.pestai.server.admin.entity.DailyCount">
+        SELECT f.stat_date, COUNT(*) AS total
+        FROM (
+            SELECT DATE(m.created_at) AS stat_date
+            FROM t_ai_message m
+            WHERE m.`role` = 'assistant' AND m.fallback = 1 AND m.created_at &gt;= #{from} AND m.created_at &lt; #{to}
+            UNION ALL
+            SELECT DATE(r.created_at) AS stat_date
+            FROM t_recognition r
+            WHERE r.fallback = 1 AND r.created_at &gt;= #{from} AND r.created_at &lt; #{to}
+        ) f
+        GROUP BY f.stat_date
+    </select>
+
+    <select id="countByMode" resultType="com.heban.pestai.server.admin.entity.NameCount">
+        SELECT `mode` AS name, COUNT(*) AS total
+        FROM t_recognition
+        GROUP BY `mode`
+        ORDER BY total DESC
+    </select>
+
+    <select id="topResults" resultType="com.heban.pestai.server.admin.entity.NameCount">
+        SELECT top_name AS name, COUNT(*) AS total
+        FROM t_recognition
+        WHERE `status` = 'SUCCESS' AND top_name IS NOT NULL AND top_name &lt;&gt; ''
+        GROUP BY top_name
+        ORDER BY total DESC, name ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countByIdentity" resultType="com.heban.pestai.server.admin.entity.NameCount">
+        SELECT `identity` AS name, COUNT(*) AS total
+        FROM t_user
+        GROUP BY `identity`
+        ORDER BY total DESC
+    </select>
+
+    <select id="selectAllCrops" resultType="java.lang.String">
+        SELECT crops FROM t_user WHERE crops IS NOT NULL AND crops &lt;&gt; ''
+    </select>
+</mapper>

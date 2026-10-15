@@ -1,6 +1,8 @@
 package com.heban.pestai.server.mapper;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -32,6 +34,9 @@ public interface UserMapper {
 
     /** 更新资料；avatarUrl 为 null 时保留原值 */
     int updateProfile(User user);
+
+    /** 清理头像：给定的相对路径中仍被某个用户 avatar_url 引用的那些（去重） */
+    List<String> selectAvatarUrlsInUse(@Param("urls") Collection<String> urls);
 
     int updatePasswordAndBumpVersion(@Param("id") Long id,
                                      @Param("passwordHash") String passwordHash,

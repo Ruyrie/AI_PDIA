@@ -16,7 +16,9 @@ class VisionResultParserTest {
     private static final String CUCUMBER = """
             {"status":"SUCCESS","top_name":"黄瓜霜霉病","confidence":0.92,"severity":"中度","category":"卵菌病害",
              "part":"叶部","spread_fast":true,"evidence":"叶背有灰黑色霉层。建议 3 天内处理。","urgency_days":3,
-             "others":[{"name":"黄瓜细菌性角斑病","confidence":0.06},{"name":"缺镁症（生理性）","confidence":0.02}]}
+             "others":[{"name":"黄瓜细菌性角斑病","confidence":0.06,"reason":" 叶面同样是多角形病斑 ",
+                        "difference":"角斑病叶背是乳白色菌脓、没有霉层"},
+                       {"name":"缺镁症（生理性）","confidence":0.02}]}
             """;
 
     @Test
@@ -33,6 +35,42 @@ class VisionResultParserTest {
         assertThat(p.spreadFast()).isTrue();
         assertThat(p.urgencyDays()).isEqualTo(3);
         assertThat(p.others()).extracting(CandidateVO::name).containsExactly("黄瓜细菌性角斑病", "缺镁症（生理性）");
+        // reason / difference 去掉首尾空白；旧格式（没有这两个字段）的候选项照常保留，字段为 null
+        assertThat(p.others().get(0).reason()).isEqualTo("叶面同样是多角形病斑");
+        assertThat(p.others().get(0).difference()).isEqualTo("角斑病叶背是乳白色菌脓、没有霉层");
+        assertThat(p.others().get(1).reason()).isNull();
+        assertThat(p.others().get(1).difference()).isNull();
+    }
+
+    @Test
+    void candidateNotesAreNormalizedTruncatedOrNull() throws Exception {
+        String raw = """
+                {"status":"SUCCESS","top_name":"番茄早疫病","confidence":0.87,"severity":"轻度",
+                 "others":[{"name":"A","confidence":0.3,"reason":"下部叶片\\n  有褐色　大斑","difference":"   "},
+                           {"name":"B","confidence":0.2,"reason":null,"difference":"null"},
+                           {"name":"C","confidence":0.1,"reason":{"text":"像"},"difference":["区别"]}]}
+                """;
+
+        ParsedVision p = VisionResultParser.parse(raw, Mode.PEST);
+
+        assertThat(p.others()).extracting(CandidateVO::name).containsExactly("A", "B", "C");
+        // 换行、全角空格等连续空白合并为一个空格；只有空白、null、"null"、不是文本时为 null
+        assertThat(p.others().get(0).reason()).isEqualTo("下部叶片 有褐色 大斑");
+        assertThat(p.others().get(0).difference()).isNull();
+        assertThat(p.others().get(1).reason()).isNull();
+        assertThat(p.others().get(1).difference()).isNull();
+        assertThat(p.others().get(2).reason()).isNull();
+        assertThat(p.others().get(2).difference()).isNull();
+
+        // 异常长的说明截断到 MAX_NOTE 字
+        String longText = "很".repeat(VisionResultParser.MAX_NOTE + 30);
+        String tooLong = """
+                {"status":"SUCCESS","top_name":"番茄早疫病","confidence":0.87,"severity":"轻度",
+                 "others":[{"name":"D","confidence":0.05,"reason":"%s","difference":"%s"}]}
+                """.formatted(longText, longText);
+        CandidateVO d = VisionResultParser.parse(tooLong, Mode.PEST).others().get(0);
+        assertThat(d.reason()).hasSize(VisionResultParser.MAX_NOTE);
+        assertThat(d.difference()).hasSize(VisionResultParser.MAX_NOTE);
     }
 
     @Test

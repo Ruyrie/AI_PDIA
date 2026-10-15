@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 全屏预览顶部栏底：从上往下 32% 黑渐变到透明，图片顶到状态栏时关闭按钮与计数仍清晰 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:endColor="@android:color/transparent"
+        android:startColor="@color/pest_scrim" />
+</shape>

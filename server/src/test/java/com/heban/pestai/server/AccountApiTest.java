@@ -28,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.heban.pestai.server.admin.mapper.AdminMapper;
 import com.heban.pestai.server.common.BizException;
 import com.heban.pestai.server.common.ErrorCode;
 import com.heban.pestai.server.common.RecoverMethod;
@@ -35,6 +36,7 @@ import com.heban.pestai.server.common.Rules;
 import com.heban.pestai.server.common.SmsScene;
 import com.heban.pestai.server.config.WebMvcConfig;
 import com.heban.pestai.server.entity.User;
+import com.heban.pestai.server.mapper.SystemConfigMapper;
 import com.heban.pestai.server.mapper.UserMapper;
 import com.heban.pestai.server.security.JwtTokenProvider;
 import com.heban.pestai.server.service.AccountService;
@@ -76,6 +78,11 @@ class AccountApiTest {
 
     @MockBean
     private UserMapper userMapper;
+    /** 后台管理员表与后台配置表：启动时会读取，测试中不访问数据库 */
+    @MockBean
+    private AdminMapper adminMapper;
+    @MockBean
+    private SystemConfigMapper systemConfigMapper;
     @MockBean
     private AccountService accountService;
     @MockBean

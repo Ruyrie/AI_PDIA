@@ -38,6 +38,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
  *     <li>直接持有接口返回的 UserVO、UserStatsVO，界面文字用 Transformations.map() 从 VO 派生。</li>
  *     <li>先显示 IUserService 缓存的资料，再用 Single.zip 并行请求 user/me 与 user/stats；资料失败时退回缓存。</li>
  *     <li>记录或资料变化只标记 dirty，页面再次可见时由 {@link #refreshIfNeeded()} 合并为一次刷新。</li>
+ *     <li>资料区可点击：已登录用户进入 A06 编辑资料（保存后经 IUserService.userChanges() 刷新本页），游客进入登录页。</li>
  *     <li>新增：资料区下方「你还没有保存账号恢复码」提醒卡片，页面每次可见时由 {@link #refreshRecoveryReminder()}
  *     查询 GET user/recovery-code；已生成、游客、查询失败、7 天内关闭过（本机按用户 ID 记录）时不显示。</li>
  * </ul>
@@ -310,6 +311,11 @@ public class MineViewModel extends BaseViewModel {
 
     public void onLoginClick() {
         event.setValue(MineEvent.GO_LOGIN);
+    }
+
+    /** 资料区（头像、昵称、手机号）：已登录 → A06 编辑资料；游客与「登录 / 注册」相同 → A03 登录 */
+    public void onProfileClick() {
+        event.setValue(isGuestNow() ? MineEvent.GO_LOGIN : MineEvent.GO_EDIT_PROFILE);
     }
 
     private boolean isGuestNow() {

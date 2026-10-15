@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,18 +28,23 @@ import okhttp3.ResponseBody;
  * 阿里云号码认证服务 · 短信认证（Dypnsapi 2017-05-25 SendSmsVerifyCode），使用控制台赠送的签名与模板。
  * 验证码由 SmsService 生成并校验，这里以 TemplateParam {"code":"123456","min":"5"} 原样下发。
  * 为避免引入阿里云 SDK（其依赖的 OkHttp 3.x 与本工程的 OkHttp 4.12.0 冲突），直接用 OkHttp 按 RPC 签名规范（HMAC-SHA1）调用。
- * AccessKey 来自配置，只在本类内部使用，不写日志。
+ * AccessKey 来自配置（环境变量或后台配置），只在本类内部使用，不写日志；配置每次发送时取一次快照，后台修改后立即生效。
  */
 public class AliyunSmsClient implements SmsClient {
 
     private static final Logger log = LoggerFactory.getLogger(AliyunSmsClient.class);
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-    private final SmsProperties.Aliyun config;
+    private final Supplier<SmsProperties.Aliyun> config;
     private final OkHttpClient client;
     private final Clock clock;
 
+    /** 配置固定（单元测试） */
     public AliyunSmsClient(SmsProperties.Aliyun config, OkHttpClient baseClient, Clock clock) {
+        this(() -> config, baseClient, clock);
+    }
+
+    public AliyunSmsClient(Supplier<SmsProperties.Aliyun> config, OkHttpClient baseClient, Clock clock) {
         this.config = config;
         this.client = baseClient.newBuilder()
                 .callTimeout(Duration.ofSeconds(10))
@@ -48,8 +54,9 @@ public class AliyunSmsClient implements SmsClient {
 
     @Override
     public void sendCode(String phone, SmsScene scene, String code) throws SmsSendException {
-        String templateCode = config.templateFor(scene);
-        String bizId = send(phone, templateCode, templateParam(code));
+        SmsProperties.Aliyun current = config.get();
+        String templateCode = current.templateFor(scene);
+        String bizId = send(current, phone, templateCode, templateParam(current, code));
         log.info("阿里云短信已发送：场景 {}，模板 {}，手机号尾号 {}，回执 {}", scene, templateCode, tail(phone), bizId);
     }
 
@@ -59,6 +66,10 @@ public class AliyunSmsClient implements SmsClient {
     }
 
     String templateParam(String code) {
+        return templateParam(config.get(), code);
+    }
+
+    private static String templateParam(SmsProperties.Aliyun config, String code) {
         Map<String, String> param = new LinkedHashMap<>();
         param.put("code", code);
         param.put("min", String.valueOf(config.getValidMinutes()));
@@ -71,7 +82,12 @@ public class AliyunSmsClient implements SmsClient {
 
     /** 调用 SendSmsVerifyCode，成功返回 BizId */
     String send(String phone, String templateCode, String templateParam) throws SmsSendException {
-        Request request = new Request.Builder().url(buildUrl(phone, templateCode, templateParam)).get().build();
+        return send(config.get(), phone, templateCode, templateParam);
+    }
+
+    private String send(SmsProperties.Aliyun config, String phone, String templateCode, String templateParam)
+            throws SmsSendException {
+        Request request = new Request.Builder().url(buildUrl(config, phone, templateCode, templateParam)).get().build();
         try (Response response = client.newCall(request).execute()) {
             ResponseBody body = response.body();
             String text = body == null ? "" : body.string();
@@ -103,6 +119,10 @@ public class AliyunSmsClient implements SmsClient {
     }
 
     String buildUrl(String phone, String templateCode, String templateParam) {
+        return buildUrl(config.get(), phone, templateCode, templateParam);
+    }
+
+    private String buildUrl(SmsProperties.Aliyun config, String phone, String templateCode, String templateParam) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("AccessKeyId", config.getAccessKeyId());
         params.put("Action", "SendSmsVerifyCode");

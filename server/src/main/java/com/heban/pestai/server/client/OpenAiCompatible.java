@@ -31,7 +31,7 @@ public final class OpenAiCompatible {
     private OpenAiCompatible() {
     }
 
-    /** 构造请求体；带图消息的 content 为 [图片, 文字] 两部分，其余为纯文本 */
+    /** 构造请求体；带图消息的 content 为 [图片 1, 图片 2, …, 文字]（每张图片一个 image_url 部分，按顺序，文字在最后），其余为纯文本 */
     public static String buildRequest(String model, List<ChatMessage> messages, boolean stream,
                                       Double temperature, Integer maxTokens) {
         return buildRequest(model, messages, stream, temperature, maxTokens, null);
@@ -48,9 +48,11 @@ public final class OpenAiCompatible {
             node.put("role", message.role());
             if (message.hasImage()) {
                 ArrayNode content = node.putArray("content");
-                ObjectNode image = content.addObject();
-                image.put("type", "image_url");
-                image.putObject("image_url").put("url", message.imageDataUrl());
+                for (String dataUrl : message.imageDataUrls()) {
+                    ObjectNode image = content.addObject();
+                    image.put("type", "image_url");
+                    image.putObject("image_url").put("url", dataUrl);
+                }
                 ObjectNode text = content.addObject();
                 text.put("type", "text");
                 text.put("text", message.text() == null ? "" : message.text());

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 全屏预览的一页（ViewPager2 要求页面铺满）：可缩放图片 + 加载中圆形进度 + 加载失败图标 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.heban.pestai.ai.preview.ZoomImageView
+        android:id="@+id/ai_preview_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/ai_preview_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/pest_loading"
+        android:indeterminate="true"
+        app:indicatorColor="?attr/colorOnSurface"
+        app:trackColor="@android:color/transparent" />
+
+    <ImageView
+        android:id="@+id/ai_preview_error"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/ai_preview_failed"
+        android:src="@drawable/ic_image_not_supported"
+        android:visibility="gone"
+        app:tint="?attr/colorOnSurfaceVariant" />
+</FrameLayout>

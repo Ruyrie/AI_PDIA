@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-// BASE_URL 从 local.properties 读取（不提交到仓库），缺省指向模拟器访问本机后端的地址
+// BASE_URL 从 local.properties 读取（不提交到仓库），缺省指向模拟器访问本机后端的地址；
+// 连接云服务器时写 BASE_URL=http://公网IP（见 deploy/DEPLOY.md）。安装后也可在 App「我的 → 关于」连续点击版本号 5 次修改
 def localProps = new Properties()
 def localPropsFile = rootProject.file('local.properties')
 if (localPropsFile.exists()) {

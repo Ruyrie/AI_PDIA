@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 相机变焦与对焦文案（scan_zoom_ 前缀，与 strings.xml 分开维护） -->
+<resources>
+    <!-- 变焦档位的无障碍描述，%1$s 为档位倍数（如「2」「0.5」） -->
+    <string name="scan_zoom_chip_desc">缩放到 %1$s 倍</string>
+    <!-- 当前档位且实际倍数与档位不同时，%2$s 为实际倍数（如「2.3」） -->
+    <string name="scan_zoom_chip_desc_current">缩放到 %1$s 倍，当前 %2$s 倍</string>
+</resources>

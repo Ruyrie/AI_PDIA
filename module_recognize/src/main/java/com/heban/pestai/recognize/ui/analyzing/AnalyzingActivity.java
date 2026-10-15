@@ -26,12 +26,14 @@ import com.heban.pestai.recognize.databinding.ActivityAnalyzingBinding;
 import com.heban.pestai.recognize.model.AnalyzeEvent;
 import com.heban.pestai.recognize.service.RecognizeService;
 import com.heban.pestai.recognize.service.RecognizeTask;
+import com.heban.pestai.recognize.ui.result.ResultActivity;
 import com.heban.pestai.recognize.ui.scan.ScanActivity;
 import com.heban.pestai.recognize.util.PhotoLoader;
 
 /**
  * S02 识别中。首次进入时 startService()（旋转重建不重复上传），每次 onStart 绑定、onStop 解绑；
  * 按 Home 键离开时任务在 Service 中继续，回来绑定后立即回放最新进度。
+ * 识别成功后展示完成状态 500ms 自动进入 R01（计时在 ViewModel 中，见 {@link AnalyzingViewModel}）。
  */
 public class AnalyzingActivity extends BaseActivity {
 
@@ -124,7 +126,8 @@ public class AnalyzingActivity extends BaseActivity {
             case GO_RESULT:
                 startActivity(RouterPath.intent(this, RouterPath.SCAN_RESULT)
                         .putExtra(RouterPath.EXTRA_RECORD_ID, event.recordId)
-                        .putExtra(RouterPath.EXTRA_RECORD_JSON, event.recordJson));
+                        .putExtra(RouterPath.EXTRA_RECORD_JSON, event.recordJson)
+                        .putExtra(ResultActivity.EXTRA_FROM_SCAN, isLaunchedFromScan()));
                 finish();
                 break;
             case GO_ERROR:
@@ -150,6 +153,16 @@ public class AnalyzingActivity extends BaseActivity {
                 finish();
                 break;
         }
+    }
+
+    /**
+     * 是否由 S01 启动：S01 用 Activity Result API 启动本页，getCallingActivity() 为 ScanActivity；
+     * 首页相册、R02「重新识别」用普通 startActivity() 启动，返回 null。
+     * 为 true 时本页关闭后 R01 正下方就是同一模式的 S01，R01「继续识别」直接关闭自己即可回到相机。
+     */
+    private boolean isLaunchedFromScan() {
+        ComponentName caller = getCallingActivity();
+        return caller != null && ScanActivity.class.getName().equals(caller.getClassName());
     }
 
     /** 识别中返回：「要取消本次识别吗？」 */

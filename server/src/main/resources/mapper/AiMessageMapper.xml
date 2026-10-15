@@ -2,13 +2,32 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.heban.pestai.server.mapper.AiMessageMapper">
 
+    <!-- model / fallback（迁移 007）：只有 AI 回答有值，用户消息为 NULL / 0 -->
     <insert id="insert" parameterType="com.heban.pestai.server.entity.AiMessage"
             useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO t_ai_message (session_id, `role`, content, image_url, reasoning_content, reasoning_ms,
-                                  created_at, updated_at)
+                                  model, fallback, created_at, updated_at)
         VALUES (#{sessionId}, #{role}, #{content}, #{imageUrl}, #{reasoningContent}, #{reasoningMs},
-                #{createdAt}, #{updatedAt})
+                #{model}, #{fallback}, #{createdAt}, #{updatedAt})
     </insert>
+
+    <!-- 带图提问的图片行：sort_no 取列表下标（0 开始），与用户选择的顺序一致 -->
+    <insert id="insertImages">
+        INSERT INTO t_ai_message_image (message_id, sort_no, image_url, created_at)
+        VALUES
+        <foreach collection="imageUrls" item="url" index="i" separator=",">
+            (#{messageId}, #{i}, #{url}, #{createdAt})
+        </foreach>
+    </insert>
+
+    <!-- 读取消息的图片（idx_message (message_id, sort_no)） -->
+    <select id="selectImagesByMessageIds" resultType="com.heban.pestai.server.entity.AiMessageImage">
+        SELECT id, message_id, sort_no, image_url, created_at
+        FROM t_ai_message_image
+        WHERE message_id IN
+        <foreach collection="messageIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ORDER BY message_id ASC, sort_no ASC
+    </select>
 
     <select id="selectTail" resultType="com.heban.pestai.server.entity.AiMessage">
         SELECT id, session_id, `role`, content, image_url, created_at
@@ -30,26 +49,46 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 打开历史对话：全部消息正序（idx_session_created 定位会话，消息数少，按主键排序） -->
+    <!-- 打开历史对话：全部消息正序（idx_session_created 定位会话，消息数少，按主键排序）；model / fallback 只供后台显示 -->
     <select id="selectBySession" resultType="com.heban.pestai.server.entity.AiMessage">
-        SELECT id, session_id, `role`, content, image_url, reasoning_content, reasoning_ms, created_at
+        SELECT id, session_id, `role`, content, image_url, reasoning_content, reasoning_ms, model, fallback, created_at
         FROM t_ai_message
         WHERE session_id = #{sessionId}
         ORDER BY id ASC
     </select>
 
+    <!-- 图片行与 t_ai_message.image_url（迁移 005 之前的旧消息只有后者）都要收集；UNION 去重 -->
     <select id="selectImageUrlsBySession" resultType="java.lang.String">
-        SELECT DISTINCT image_url
+        SELECT i.image_url
+        FROM t_ai_message_image i
+        JOIN t_ai_message m ON i.message_id = m.id
+        WHERE m.session_id = #{sessionId}
+        UNION
+        SELECT image_url
         FROM t_ai_message
         WHERE session_id = #{sessionId} AND image_url IS NOT NULL AND image_url &lt;&gt; ''
     </select>
+
+    <!-- 多表 DELETE：只删除 i（图片行）；消息随后由 deleteBySession 删除 -->
+    <delete id="deleteImagesBySession">
+        DELETE i
+        FROM t_ai_message_image i
+        JOIN t_ai_message m ON i.message_id = m.id
+        WHERE m.session_id = #{sessionId}
+    </delete>
 
     <delete id="deleteBySession">
         DELETE FROM t_ai_message WHERE session_id = #{sessionId}
     </delete>
 
+    <!-- 两处任一引用都算在用（t_ai_message_image 走 idx_image_url）；UNION 去重 -->
     <select id="selectImageUrlsInUse" resultType="java.lang.String">
-        SELECT DISTINCT image_url
+        SELECT image_url
+        FROM t_ai_message_image
+        WHERE image_url IN
+        <foreach collection="urls" item="url" open="(" separator="," close=")">#{url}</foreach>
+        UNION
+        SELECT image_url
         FROM t_ai_message
         WHERE image_url IN
         <foreach collection="urls" item="url" open="(" separator="," close=")">#{url}</foreach>
@@ -63,11 +102,26 @@
     </select>
 
     <select id="selectImageUrlsByUser" resultType="java.lang.String">
-        SELECT DISTINCT m.image_url
+        SELECT i.image_url
+        FROM t_ai_message_image i
+        JOIN t_ai_message m ON i.message_id = m.id
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE s.user_id = #{userId}
+        UNION
+        SELECT m.image_url
         FROM t_ai_message m
         JOIN t_ai_session s ON m.session_id = s.id
         WHERE s.user_id = #{userId} AND m.image_url IS NOT NULL AND m.image_url &lt;&gt; ''
     </select>
+
+    <!-- 多表 DELETE：只删除 i（图片行）；消息随后由 deleteByUser 删除 -->
+    <delete id="deleteImagesByUser">
+        DELETE i
+        FROM t_ai_message_image i
+        JOIN t_ai_message m ON i.message_id = m.id
+        JOIN t_ai_session s ON m.session_id = s.id
+        WHERE s.user_id = #{userId}
+    </delete>
 
     <!-- 多表 DELETE：只删除 m（消息）；会话随后由 AiSessionMapper.deleteByUser 删除 -->
     <delete id="deleteByUser">

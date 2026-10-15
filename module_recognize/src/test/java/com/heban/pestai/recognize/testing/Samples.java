@@ -71,6 +71,16 @@ public final class Samples {
         return vo;
     }
 
+    /** 新版服务器返回的结果：「其他可能」带判断依据（第二项两段都是空白，视为没有） */
+    public static RecognitionVO explained() {
+        RecognitionVO vo = cucumber();
+        vo.setOthers(Arrays.asList(
+                candidate("黄瓜细菌性角斑病", 0.06, "病斑同样受叶脉限制呈多角形", "角斑病叶背有白色菌脓，霜霉病是灰黑色霉层"),
+                candidate("缺镁症（生理性）", 0.02, " ", ""),
+                candidate("黄瓜蔓枯病", 0.01, "叶缘有黄褐色病斑", null)));
+        return vo;
+    }
+
     public static RecognitionVO failed() {
         RecognitionVO vo = new RecognitionVO();
         vo.setId(77);
@@ -85,6 +95,13 @@ public final class Samples {
         CandidateVO c = new CandidateVO();
         c.setName(name);
         c.setConfidence(confidence);
+        return c;
+    }
+
+    public static CandidateVO candidate(String name, double confidence, String reason, String difference) {
+        CandidateVO c = candidate(name, confidence);
+        c.setReason(reason);
+        c.setDifference(difference);
         return c;
     }
 }

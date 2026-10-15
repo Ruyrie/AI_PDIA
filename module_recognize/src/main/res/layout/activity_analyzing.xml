@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- S02 识别中：照片区 + 扫描线、总进度、三步骤状态、耗时提示；底部「取消识别」「查看结果」 -->
+<!-- S02 识别中：照片区 + 扫描线、总进度、三步骤状态、耗时提示；底部「取消识别」。
+     识别成功后展示完成状态 500ms 自动进入 R01，期间隐藏「取消识别」 -->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
@@ -371,19 +372,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/scan_analyzing_cancel"
+                app:invisible="@{vm.uiState == UiState.SUCCESS}"
                 app:onSafeClick="@{() -> vm.cancel()}" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/analyzingViewResult"
-                style="@style/Widget.Pest.Button.Medium"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:text="@string/scan_analyzing_view_result"
-                android:visibility="gone"
-                app:onSafeClick="@{() -> vm.viewResult()}"
-                app:visible="@{vm.uiState == UiState.SUCCESS}" />
         </LinearLayout>
     </LinearLayout>
 </layout>

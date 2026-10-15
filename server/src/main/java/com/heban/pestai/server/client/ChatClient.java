@@ -22,4 +22,9 @@ public interface ChatClient {
     default boolean supportsImages() {
         return false;
     }
+
+    /** 本次调用将使用的模型名（记录到 t_ai_message.model）；Mock 为 "mock"，未知为 null */
+    default String modelName() {
+        return null;
+    }
 }

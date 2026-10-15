@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 聊天图片占位：168 × 112dp，圆角 16dp -->
+<!-- 聊天图片占位底与裁剪轮廓（ImageGridView 每格复制一份并按格子改圆角：单图 16dp，九宫格 12dp） -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="?attr/colorSurfaceContainerHighest" />
     <corners android:radius="16dp" />

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「按住 说话」按钮底色：手指在取消区（activated）为 errorContainer；其余为 surfaceContainerHighest（比胶囊的 High 深一级） -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorErrorContainer" android:state_activated="true" />
+    <item android:color="?attr/colorSurfaceContainerHighest" />
+</selector>

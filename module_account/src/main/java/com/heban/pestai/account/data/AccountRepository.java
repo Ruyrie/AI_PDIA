@@ -186,6 +186,18 @@ public class AccountRepository {
                 });
     }
 
+    /**
+     * GET user/me：刷新当前用户资料（A06 编辑资料进入时，先用缓存预填，再以服务器为准）；
+     * 成功后覆盖 user_json 并通知其他组件。失败（含 40101，已由 AuthInterceptor 统一处理）交给调用方忽略。
+     */
+    @NonNull
+    public Single<UserVO> refreshUser() {
+        return api.me()
+                .subscribeOn(Schedulers.io())
+                .compose(RxResult.<UserVO>transform())
+                .doOnSuccess(session::saveUser);
+    }
+
     /** PUT user/profile；成功后用返回的 UserVO 覆盖 user_json 并通知其他组件 */
     @NonNull
     public Single<UserVO> updateProfile(@NonNull ProfileRequest request) {

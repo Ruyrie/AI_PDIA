@@ -35,7 +35,7 @@ import com.heban.pestai.server.vo.SessionVO;
  *   <li>新建：追问识别结果时（record_id 有值且为本人未删除的成功记录）标题为「追问：」+ top_name；
  *       记录已删除或不是成功记录时按普通对话处理（record_id、title 为空，第一条提问写入时补写标题）。</li>
  *   <li>历史对话：只列出至少有 1 条消息的会话，updated_at 倒序；title 为空时返回「新对话」。</li>
- *   <li>删除：删除会话与全部消息，事务提交后尽力删除聊天图片；会话不存在时直接成功（幂等）。</li>
+ *   <li>删除：删除会话与全部消息（含图片行），事务提交后尽力删除聊天图片；会话不存在时直接成功（幂等）。</li>
  * </ul>
  */
 @Service
@@ -106,7 +106,10 @@ public class AiSessionService {
         return new PageVO<>(list, total, (long) page * size < total);
     }
 
-    /** GET ai/sessions/{id}：会话信息 + 关联记录摘要（已删除时为 null）+ 全部消息正序；不是自己的会话 40001 */
+    /**
+     * GET ai/sessions/{id}：会话信息 + 关联记录摘要（已删除时为 null）+ 全部消息正序；不是自己的会话 40001。
+     * 每条消息的图片按顺序给出完整地址（image_urls，没有图片为空列表），image_url 为第一张（兼容旧版 App）。
+     */
     @Transactional(readOnly = true)
     public SessionDetailVO detail(long userId, long sessionId) {
         AiSession session = aiSessionMapper.selectById(sessionId);
@@ -115,15 +118,16 @@ public class AiSessionService {
         }
         Recognition record = session.getRecordId() == null
                 ? null : recognitionMapper.selectByIdAndUser(session.getRecordId(), userId);
-        List<ChatMessageVO> messages = aiMessageMapper.selectBySession(sessionId).stream()
-                .map(this::toMessage).toList();
+        List<ChatMessageVO> messages = ChatImages.attach(aiMessageMapper, aiMessageMapper.selectBySession(sessionId))
+                .stream().map(this::toMessage).toList();
         return new SessionDetailVO(session.getId(), session.getRecordId(), titleOrDefault(session.getTitle()),
                 recognitionAssembler.toItem(record), messages);
     }
 
     /**
-     * DELETE ai/sessions/{id}：删除会话与全部消息；会话不存在（含已删除）直接成功，不是自己的会话 40001。
-     * 要删除的图片路径在删除消息之前查出，事务提交后再删磁盘文件（回滚时文件保留）；仍被其他消息引用的图片不删。
+     * DELETE ai/sessions/{id}：删除会话与全部消息（先删图片行再删消息）；会话不存在（含已删除）直接成功，不是自己的会话 40001。
+     * 要删除的图片路径（t_ai_message_image 与 t_ai_message.image_url 两处）在删除消息之前查出，事务提交后再删磁盘文件
+     * （回滚时文件保留）；仍被其他消息引用的图片不删。
      */
     @Transactional(rollbackFor = Exception.class)
     public void delete(long userId, long sessionId) {
@@ -140,6 +144,7 @@ public class AiSessionService {
                 files.add(path.trim());
             }
         }
+        aiMessageMapper.deleteImagesBySession(sessionId);
         int messages = aiMessageMapper.deleteBySession(sessionId);
         aiSessionMapper.deleteByIdAndUser(sessionId, userId);
         if (!files.isEmpty()) {
@@ -163,8 +168,9 @@ public class AiSessionService {
     }
 
     private ChatMessageVO toMessage(AiMessage m) {
+        List<String> imageUrls = ChatImages.of(m).stream().map(fileStorageService::toUrl).toList();
         return new ChatMessageVO(m.getRole(), m.getContent() == null ? "" : m.getContent(),
-                fileStorageService.toUrl(m.getImageUrl()), m.getCreatedAt(),
+                imageUrls.isEmpty() ? null : imageUrls.get(0), imageUrls, m.getCreatedAt(),
                 m.getReasoningContent(), m.getReasoningMs());
     }
 

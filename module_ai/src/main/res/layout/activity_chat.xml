@@ -166,95 +166,15 @@
                 app:tint="?attr/colorOnSurfaceVariant" />
         </FrameLayout>
 
-        <!-- 待发送图片：56dp 缩略图 + 右上角 20dp 关闭按钮 -->
-        <FrameLayout
-            android:id="@+id/chat_pending"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            app:visible="@{vm.pendingImage != null}">
-
-            <ImageView
-                android:id="@+id/chat_pending_image"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:layout_marginTop="6dp"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/ai_bg_thumb_12"
-                android:clipToOutline="true"
-                android:contentDescription="@string/ai_pending_image"
-                android:scaleType="centerCrop"
-                app:imageCornerRadius="@{12}"
-                app:imageUrl="@{vm.pendingImage}" />
-
-            <ImageButton
-                android:id="@+id/chat_pending_remove"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="top|end"
-                android:background="@drawable/pest_bg_circle"
-                android:backgroundTint="?attr/colorSurfaceInverse"
-                android:contentDescription="@string/ai_remove_image"
-                android:padding="3dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_close"
-                app:onSafeClick="@{() -> vm.clearPendingImage()}"
-                app:tint="?attr/colorOnSurfaceInverse" />
-        </FrameLayout>
-
-        <!-- 底部输入栏：生成中右侧按钮变为停止按钮 -->
-        <LinearLayout
-            android:id="@+id/chat_input_bar"
+        <!-- 输入栏（与 Q01 共用）：待发送图片缩略图条 + 胶囊（相机 / 输入框或「按住 说话」/ 麦克风或键盘 /「+」/ 发送，生成中为停止），
+             见 view_ai_composer 与 ComposerBar -->
+        <include
+            android:id="@+id/chat_composer"
+            layout="@layout/view_ai_composer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="bottom"
-            android:orientation="horizontal"
-            android:paddingStart="4dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="12dp">
-
-            <ImageButton
-                android:id="@+id/chat_pick_image"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/ai_pick_image"
-                android:src="@drawable/ic_add_photo_alternate"
-                app:onSafeClick="@{() -> vm.onPickImageClick()}"
-                app:tint="?attr/colorOnSurfaceVariant" />
-
-            <EditText
-                android:id="@+id/chat_input"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:background="@drawable/ai_bg_input"
-                android:hint="@string/ai_chat_input_hint"
-                android:importantForAutofill="no"
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="4"
-                android:minHeight="48dp"
-                android:paddingStart="20dp"
-                android:paddingTop="12dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="12dp"
-                android:text="@={vm.inputText}"
-                android:textAppearance="?attr/textAppearanceBodyLarge"
-                android:textColorHint="?attr/colorOnSurfaceVariant" />
-
-            <ImageButton
-                android:id="@+id/chat_send"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/ai_bg_send"
-                android:contentDescription="@string/ai_send"
-                android:enabled="@{safeUnbox(vm.actionEnabled)}"
-                android:src="@drawable/ic_arrow_upward"
-                app:tint="@color/ai_send_icon" />
-        </LinearLayout>
+            android:layout_marginBottom="12dp"
+            app:composer="@{vm}"
+            app:defaultHint="@{@string/ai_chat_input_hint}" />
     </LinearLayout>
 </layout>

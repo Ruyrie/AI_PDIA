@@ -23,14 +23,27 @@ import com.heban.pestai.recognize.util.RecognizeErrors;
 import com.heban.pestai.recognize.util.TextSource;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 /**
  * S02 识别中：把 RecognizeService 的进度快照转换为标题、状态文字、进度、步骤状态，并发出跳转事件。
  * 作为 {@link ProgressListener} 由 {@link RecognizeTask#attach(ProgressListener)} 注册，回调都在主线程。
+ * <p>
+ * 识别成功后先展示「识别完成」与三步打勾 {@link #AUTO_RESULT_DELAY_MS} 毫秒，再自动发出 GO_RESULT 进入 R01。
+ * 计时放在 ViewModel 中（主线程 Rx 计时器）：旋转屏幕不会重新计时或丢失；用户此时离开 App，
+ * 事件留在 SingleLiveEvent 中，回到前台（STARTED）时送达；{@link #resultSent} 保证只发一次。
+ * 这 500ms 内按返回键 / 返回箭头不再等待，立即进入 R01（不直接关闭，避免与计时器同时触发跳转，也不让用户错过结果）。
  */
 public class AnalyzingViewModel extends BaseViewModel implements ProgressListener {
+
+    /** 识别成功后停留展示完成状态的时长 */
+    static final long AUTO_RESULT_DELAY_MS = 500;
 
     private final Gson gson;
     private final TextSource texts;
@@ -57,6 +70,11 @@ public class AnalyzingViewModel extends BaseViewModel implements ProgressListene
     private RecognitionVO result;
     @Nullable
     private RecognizeTask task;
+    /** 已发出 GO_RESULT：计时器与返回键只有先到的一个生效 */
+    private boolean resultSent;
+    /** 自动进入 R01 的计时器 */
+    @Nullable
+    private Disposable autoResult;
 
     @Inject
     public AnalyzingViewModel(Gson gson, TextSource texts) {
@@ -114,6 +132,7 @@ public class AnalyzingViewModel extends BaseViewModel implements ProgressListene
                 render(state);
                 uiState.setValue(UiState.SUCCESS);
                 finishTask();
+                scheduleResult();
                 break;
             case FAILED:
                 if (RecognizeErrors.isUnauthorized(state.getErrorCode())) {
@@ -204,12 +223,46 @@ public class AnalyzingViewModel extends BaseViewModel implements ProgressListene
         }
     }
 
+    // ---------- 自动进入 R01 ----------
+
+    /** 识别成功：展示完成状态 500ms 后自动进入 R01（只安排一次） */
+    private void scheduleResult() {
+        if (resultSent || autoResult != null) {
+            return;
+        }
+        autoResult = Completable.timer(AUTO_RESULT_DELAY_MS, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+                .subscribe(this::sendResult);
+        add(autoResult);
+    }
+
+    /** Gson 序列化 RecognitionVO，发出 GO_RESULT；计时器到点与返回键共用，只发一次 */
+    private void sendResult() {
+        if (result == null || resultSent) {
+            return;
+        }
+        resultSent = true;
+        if (autoResult != null) {
+            disposables.remove(autoResult);
+            autoResult = null;
+        }
+        event.setValue(AnalyzeEvent.result(result.getId(), gson.toJson(result)));
+    }
+
+    /** 已到终态时离开：识别成功则立即进入 R01（不再等待计时器），否则关闭 */
+    private void leaveFinished() {
+        if (result != null) {
+            sendResult();
+        } else {
+            event.setValue(AnalyzeEvent.of(AnalyzeEvent.Type.CLOSE));
+        }
+    }
+
     // ---------- 用户操作 ----------
 
-    /** 「取消识别」：识别中取消任务并返回 S01；完成后直接返回 S01 */
+    /** 「取消识别」：识别中取消任务并返回 S01；完成后（按钮已隐藏）与返回键相同 */
     public void cancel() {
         if (finished) {
-            event.setValue(AnalyzeEvent.of(AnalyzeEvent.Type.CLOSE));
+            leaveFinished();
             return;
         }
         finished = true;
@@ -219,19 +272,12 @@ public class AnalyzingViewModel extends BaseViewModel implements ProgressListene
         event.setValue(AnalyzeEvent.of(AnalyzeEvent.Type.CANCELED));
     }
 
-    /** 返回键 / 返回箭头：识别中先确认，完成后直接返回 */
+    /** 返回键 / 返回箭头：识别中先确认；识别成功后立即进入 R01（跳过剩余等待） */
     public void onBackPressed() {
         if (finished) {
-            event.setValue(AnalyzeEvent.of(AnalyzeEvent.Type.CLOSE));
+            leaveFinished();
         } else {
             event.setValue(AnalyzeEvent.of(AnalyzeEvent.Type.CONFIRM_CANCEL));
-        }
-    }
-
-    /** 「查看结果」：Gson 序列化 RecognitionVO，进入 R01 */
-    public void viewResult() {
-        if (result != null) {
-            event.setValue(AnalyzeEvent.result(result.getId(), gson.toJson(result)));
         }
     }
 

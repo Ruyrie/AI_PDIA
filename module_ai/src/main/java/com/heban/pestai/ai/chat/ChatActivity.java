@@ -2,7 +2,6 @@ package com.heban.pestai.ai.chat;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -16,9 +15,6 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.PickVisualMediaRequest;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
@@ -28,8 +24,12 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 
 import com.bumptech.glide.Glide;
 import com.heban.pestai.ai.R;
+import com.heban.pestai.ai.compose.ComposerBar;
 import com.heban.pestai.ai.databinding.ActivityChatBinding;
+import com.heban.pestai.ai.preview.ImagePreviewActivity;
+import com.heban.pestai.ai.util.AiImagePicker;
 import com.heban.pestai.ai.util.AiLoginDialog;
+import com.heban.pestai.ai.util.AiMicPermission;
 import com.heban.pestai.ai.util.AnswerFormatter;
 import com.heban.pestai.base.BaseActivity;
 import com.heban.pestai.base.SnackbarAnchorProvider;
@@ -39,14 +39,19 @@ import com.heban.pestai.base.util.RxClick;
 import com.heban.pestai.common.MainViewModel;
 import com.heban.pestai.common.router.RouterPath;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Q02 AI 对话页（RouterPath.AI_CHAT；module_ai 内部用显式 Intent，见 {@link #intent(Context, ChatArgs)}）。
  * <p>Intent 参数：RouterPath.EXTRA_RECORD_ID（long，追问识别结果，缺省 -1）、{@link #EXTRA_QUESTION}（自动发送的问题）、
- * RouterPath.EXTRA_IMAGE_URI（自动发送的图片）、{@link #EXTRA_SESSION_ID}（打开历史对话）。</p>
+ * {@link #EXTRA_IMAGE_URIS} / {@link #EXTRA_IMAGE_URLS}（自动发送的图片，Q01 已上传）、{@link #EXTRA_SESSION_ID}（打开历史对话）。</p>
  * <ul>
  *     <li>根布局用 InsetsHelper 避开系统栏与软键盘，输入栏始终贴在键盘上方；</li>
+ *     <li>输入栏为与 Q01 共用的 {@link ComposerBar}（待发送图片缩略图条 + 胶囊：相机直接拍照 / 输入框 /「+」直接打开相册 /
+ *     发送，生成中发送按钮变为停止按钮），拍照与多选由 {@link AiImagePicker} 处理；麦克风 / 键盘图标切换文字与语音输入，
+ *     语音输入时「按住 说话」（生成中也可用，识别结果只填入输入框），麦克风权限由 {@link AiMicPermission} 申请；</li>
+ *     <li>点按消息中的图片打开全屏预览（{@link ImagePreviewActivity}），从点按的那张开始；</li>
  *     <li>逐字输出：Choreographer 逐帧推进 {@link TypingTracker}，刷新不超过 30 次 / 秒，只局部刷新正在输出的气泡；
  *     页面不可见时停止，销毁时移除回调；</li>
  *     <li>滚动：列表在底部（48dp 以内）时内容增长平滑跟随；用户上滑后停止跟随并在输入栏上方右侧显示「回到底部」；</li>
@@ -59,6 +64,10 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
     public static final String EXTRA_QUESTION = "question";
     /** long：要打开的历史对话 ID（Q03 进入，只在 module_ai 内部使用） */
     public static final String EXTRA_SESSION_ID = "session_id";
+    /** ArrayList&lt;String&gt;：自动发送图片的本地 Uri，与 {@link #EXTRA_IMAGE_URLS} 一一对应，只用于显示（module_ai 内部） */
+    public static final String EXTRA_IMAGE_URIS = "ai_image_uris";
+    /** ArrayList&lt;String&gt;：自动发送图片的地址（Q01 已上传，Q02 不再上传；module_ai 内部） */
+    public static final String EXTRA_IMAGE_URLS = "ai_image_urls";
 
     /** 距离底部不超过 48dp 视为在底部 */
     private static final int BOTTOM_THRESHOLD_DP = 48;
@@ -74,14 +83,12 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
     private ChatAdapter adapter;
     private LinearLayoutManager layoutManager;
     private TypingTracker typing;
-    private ActivityResultLauncher<PickVisualMediaRequest> pickImage;
+    private AiImagePicker imagePicker;
+    private AiMicPermission micPermission;
+    private ComposerBar composer;
     private int lastCount = -1;
     /** 列表还没有内容时收到「滚到底部」（打开历史对话）：等这次提交的列表生效后直接定位到最后一项，避免先显示顶部再跳 */
     private boolean jumpToBottomPending;
-    @Nullable
-    private Boolean showingStop;
-    @Nullable
-    private Animator iconAnimator;
 
     /** 是否跟随新内容滚动到底部（用户上滑离开底部后为 false） */
     private boolean following = true;
@@ -107,8 +114,9 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
         if (args.question != null) {
             intent.putExtra(EXTRA_QUESTION, args.question);
         }
-        if (args.imageUri != null) {
-            intent.putExtra(RouterPath.EXTRA_IMAGE_URI, args.imageUri);
+        if (args.hasImages()) {
+            intent.putStringArrayListExtra(EXTRA_IMAGE_URIS, new ArrayList<>(args.imageUris));
+            intent.putStringArrayListExtra(EXTRA_IMAGE_URLS, new ArrayList<>(args.imageUrls));
         }
         if (args.hasSession()) {
             intent.putExtra(EXTRA_SESSION_ID, args.sessionId);
@@ -121,7 +129,8 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
         return new ChatArgs(
                 intent.getLongExtra(RouterPath.EXTRA_RECORD_ID, RouterPath.NO_RECORD),
                 intent.getStringExtra(EXTRA_QUESTION),
-                intent.getStringExtra(RouterPath.EXTRA_IMAGE_URI),
+                intent.getStringArrayListExtra(EXTRA_IMAGE_URIS),
+                intent.getStringArrayListExtra(EXTRA_IMAGE_URLS),
                 intent.getLongExtra(EXTRA_SESSION_ID, ChatArgs.NO_SESSION));
     }
 
@@ -137,12 +146,20 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
         observeToast(viewModel);
         bottomThreshold = DimenUtils.dp(this, BOTTOM_THRESHOLD_DP);
 
-        pickImage = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
-            if (uri != null) {
-                viewModel.setPendingImage(uri.toString());
+        // 必须在 STARTED 之前注册
+        imagePicker = AiImagePicker.register(this, new AiImagePicker.Callback() {
+            @Override
+            public void onImagesPicked(@NonNull List<String> uris) {
+                viewModel.onImagesPicked(uris);
+            }
+
+            @Override
+            public void onPickFailed(int message) {
+                showSnackbar(getString(message));
             }
         });
-
+        // 授权结果由 ComposerBar 交给 ViewModel（点按麦克风图标申请的授权后切到语音）
+        micPermission = AiMicPermission.register(this);
         setupList();
         setupActions();
         observe();
@@ -168,8 +185,11 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
                     }
 
                     @Override
-                    public void onImageClick(@NonNull ChatMessage message) {
-                        viewModel.onImageClick(message);
+                    public void onImageClick(@NonNull ChatMessage message, int index) {
+                        List<String> sources = message.getImageSources();
+                        if (index >= 0 && index < sources.size()) {
+                            startActivity(ImagePreviewActivity.intent(ChatActivity.this, sources, index));
+                        }
                     }
 
                     @Override
@@ -193,6 +213,7 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
                     }
                 });
         list.setAdapter(adapter);
+        composer = ComposerBar.setup(binding.chatComposer, this, Glide.with(this), viewModel, micPermission);
         list.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -221,7 +242,6 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
     private void setupActions() {
         binding.chatBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         RxClick.throttle(binding.chatNew, v -> startNewConversation());
-        RxClick.throttle(binding.chatSend, v -> viewModel.onSendOrStop());
         binding.chatScrollBottom.setOnClickListener(v -> {
             following = true;
             scrollToBottom(true);
@@ -239,7 +259,6 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
 
     private void observe() {
         viewModel.getMessages().observe(this, this::submitMessages);
-        viewModel.getStreaming().observe(this, streaming -> updateSendIcon(Boolean.TRUE.equals(streaming)));
         viewModel.getEvent().observe(this, this::handleEvent);
     }
 
@@ -428,10 +447,11 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
             case ChatEvent.NEED_LOGIN:
                 AiLoginDialog.show(this);
                 break;
+            case ChatEvent.TAKE_PHOTO:
+                imagePicker.takePhoto();
+                break;
             case ChatEvent.PICK_IMAGE:
-                pickImage.launch(new PickVisualMediaRequest.Builder()
-                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                        .build());
+                imagePicker.pickFromAlbum(viewModel.remainingImages());
                 break;
             case ChatEvent.OPEN_RECORD:
                 startActivity(RouterPath.intent(this, RouterPath.SCAN_RESULT)
@@ -477,69 +497,29 @@ public class ChatActivity extends BaseActivity implements SnackbarAnchorProvider
         showSnackbar(getString(R.string.ai_copied));
     }
 
-    /** 生成中发送按钮变为停止按钮（stop 实心），图标 150ms 淡出淡入 */
-    private void updateSendIcon(boolean stop) {
-        if (showingStop != null && showingStop == stop) {
-            return;
-        }
-        boolean first = showingStop == null;
-        showingStop = stop;
-        int icon = stop ? com.heban.pestai.base.R.drawable.ic_stop_fill
-                : com.heban.pestai.base.R.drawable.ic_arrow_upward;
-        binding.chatSend.setContentDescription(getString(stop ? R.string.ai_stop : R.string.ai_send));
-        if (iconAnimator != null) {
-            iconAnimator.cancel();
-        }
-        if (first) {
-            binding.chatSend.setImageResource(icon);
-            binding.chatSend.setImageAlpha(255);
-            return;
-        }
-        ValueAnimator fade = ValueAnimator.ofInt(255, 0, 255);
-        fade.setDuration(150);
-        final boolean[] swapped = {false};
-        fade.addUpdateListener(a -> {
-            if (!swapped[0] && a.getAnimatedFraction() >= 0.5f) {
-                swapped[0] = true;
-                binding.chatSend.setImageResource(icon);
-            }
-            binding.chatSend.setImageAlpha((int) a.getAnimatedValue());
-        });
-        fade.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                binding.chatSend.setImageResource(icon);
-                binding.chatSend.setImageAlpha(255);
-            }
-        });
-        iconAnimator = fade;
-        fade.start();
-    }
-
-    /** 点击输入栏（含发送 / 停止按钮）与「回到底部」时保留软键盘，点击列表空白处收起 */
+    /** 点击输入栏（待发送图片缩略图条、胶囊及其中的按钮）与「回到底部」时保留软键盘，点击列表空白处收起 */
     @Override
     protected boolean shouldHideKeyboardOnTouch(@NonNull MotionEvent ev) {
-        if (binding == null) {
+        if (binding == null || composer == null) {
             return true;
         }
-        return !isTouchInside(binding.chatInputBar, ev)
-                && !(binding.chatPending.getVisibility() == View.VISIBLE && isTouchInside(binding.chatPending, ev))
+        return !composer.contains(ev)
                 && !(binding.chatScrollBottom.getVisibility() == View.VISIBLE
                 && isTouchInside(binding.chatScrollBottom, ev));
     }
 
+    /** Snackbar 显示在整个输入栏（含缩略图条）上方 */
     @Nullable
     @Override
     public View getSnackbarAnchor() {
-        return binding == null ? null : binding.chatInputBar;
+        return composer == null ? null : composer.getRoot();
     }
 
     @Override
     protected void onDestroy() {
         cancelFrame();
-        if (iconAnimator != null) {
-            iconAnimator.cancel();
-            iconAnimator = null;
+        if (composer != null) {
+            composer.release();
         }
         if (binding != null) {
             binding.chatScrollBottom.animate().cancel();

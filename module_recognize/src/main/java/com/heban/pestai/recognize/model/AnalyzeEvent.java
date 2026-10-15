@@ -8,11 +8,12 @@ import com.heban.pestai.common.router.RouterPath;
 /**
  * S02 一次性事件。
  * <ul>
- *     <li>GO_RESULT：进入 R01，携带 recordId 与 recordJson（Gson 序列化的 RecognitionVO）</li>
+ *     <li>GO_RESULT：进入 R01，携带 recordId 与 recordJson（Gson 序列化的 RecognitionVO）；
+ *     识别成功后展示完成状态 500ms 自动发出，期间按返回键立即发出</li>
  *     <li>GO_ERROR：进入 R02，携带 errorType 与 failReason</li>
  *     <li>CANCELED：已取消识别，返回 S01 并提示</li>
  *     <li>CONFIRM_CANCEL：识别中按返回键，弹出确认对话框</li>
- *     <li>CLOSE：直接关闭（识别完成后返回，或登录过期由壳工程统一跳转登录页）</li>
+ *     <li>CLOSE：直接关闭（登录过期，由壳工程统一跳转登录页）</li>
  * </ul>
  */
 public final class AnalyzeEvent {

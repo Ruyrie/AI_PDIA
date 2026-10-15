@@ -33,6 +33,7 @@ import com.heban.pestai.server.common.ChatRole;
 import com.heban.pestai.server.common.ErrorCode;
 import com.heban.pestai.server.common.RecognitionStatus;
 import com.heban.pestai.server.entity.AiMessage;
+import com.heban.pestai.server.entity.AiMessageImage;
 import com.heban.pestai.server.entity.AiSession;
 import com.heban.pestai.server.entity.AiSessionSummary;
 import com.heban.pestai.server.entity.Recognition;
@@ -123,6 +124,14 @@ class AiSessionServiceTest {
     }
 
     @Test
+    void imageOnlyLastMessageShowsImagePrefix() {
+        // 只发图片的提问：content 为空字符串，image_url 为第一张
+        SessionItemVO item = AiSessionService.toItem(summary(2L, null, "图片提问", 1, ChatRole.USER, "", "chat/20261014/a.jpg"));
+        assertThat(item.lastMessage()).isEqualTo("[图片]");
+        assertThat(item.title()).isEqualTo("图片提问");
+    }
+
+    @Test
     void lastMessageMissingGivesNullPreview() {
         SessionItemVO item = AiSessionService.toItem(summary(1L, null, " ", null, null, null, null));
         assertThat(item.lastMessage()).isNull();
@@ -162,11 +171,39 @@ class AiSessionServiceTest {
         assertThat(detail.messages()).hasSize(2);
         assertThat(detail.messages().get(0).role()).isEqualTo(ChatRole.USER);
         assertThat(detail.messages().get(0).imageUrl()).isEqualTo(BASE + "/files/chat/20261013/q.jpg");
+        // 迁移前的旧消息没有图片行：image_urls 退回 [image_url]
+        assertThat(detail.messages().get(0).imageUrls()).containsExactly(BASE + "/files/chat/20261013/q.jpg");
         assertThat(detail.messages().get(0).reasoningContent()).isNull();
         assertThat(detail.messages().get(1).content()).isEqualTo("处理建议……");
         assertThat(detail.messages().get(1).imageUrl()).isNull();
+        assertThat(detail.messages().get(1).imageUrls()).isNotNull().isEmpty();
         assertThat(detail.messages().get(1).reasoningContent()).isEqualTo("先看病斑");
         assertThat(detail.messages().get(1).reasoningMs()).isEqualTo(12345);
+    }
+
+    @Test
+    void detailReturnsAllImagesInOrderAndImageOnlyQuestionHasEmptyContent() {
+        when(sessions.selectById(520L)).thenReturn(session(520L, USER_ID, null, "图片提问"));
+        AiMessage multi = message(11L, ChatRole.USER, "", "chat/20261014/c.jpg");
+        AiMessage answer = message(12L, ChatRole.ASSISTANT, "三张都是霜霉病", null);
+        AiMessage text = message(13L, ChatRole.USER, "怎么处理", null);
+        when(messages.selectBySession(520L)).thenReturn(List.of(multi, answer, text));
+        // 只查带图消息的图片行（一次查询）
+        when(messages.selectImagesByMessageIds(List.of(11L))).thenReturn(List.of(
+                image(11L, 0, "chat/20261014/c.jpg"), image(11L, 1, "chat/20261014/a.png"),
+                image(11L, 2, "chat/20261014/b.jpg")));
+
+        SessionDetailVO detail = service.detail(USER_ID, 520L);
+
+        assertThat(detail.messages()).hasSize(3);
+        assertThat(detail.messages().get(0).content()).isEmpty();
+        assertThat(detail.messages().get(0).imageUrls()).containsExactly(
+                BASE + "/files/chat/20261014/c.jpg", BASE + "/files/chat/20261014/a.png", BASE + "/files/chat/20261014/b.jpg");
+        assertThat(detail.messages().get(0).imageUrl()).isEqualTo(BASE + "/files/chat/20261014/c.jpg");
+        assertThat(detail.messages().get(1).imageUrls()).isEmpty();
+        assertThat(detail.messages().get(2).imageUrls()).isEmpty();
+        assertThat(detail.messages().get(2).imageUrl()).isNull();
+        verify(messages).selectImagesByMessageIds(List.of(11L));
     }
 
     @Test
@@ -184,6 +221,8 @@ class AiSessionServiceTest {
         when(sessions.selectById(601L)).thenReturn(session(601L, USER_ID, null, "普通对话"));
         service.detail(USER_ID, 601L);
         verify(recognitions, never()).selectByIdAndUser(org.mockito.ArgumentMatchers.isNull(), anyLong());
+        // 没有带图消息：不查图片行
+        verify(messages, never()).selectImagesByMessageIds(any());
     }
 
     @Test
@@ -215,18 +254,21 @@ class AiSessionServiceTest {
                 .isInstanceOf(BizException.class)
                 .extracting(e -> ((BizException) e).getCode()).isEqualTo(40001);
         verify(messages, never()).selectImageUrlsBySession(anyLong());
+        verify(messages, never()).deleteImagesBySession(anyLong());
         verify(messages, never()).deleteBySession(anyLong());
         verify(sessions, never()).deleteByIdAndUser(anyLong(), anyLong());
     }
 
     @Test
-    void deleteRemovesMessagesSessionAndUnsharedChatImages() throws Exception {
+    void deleteRemovesImageRowsMessagesSessionAndUnsharedChatImages() throws Exception {
         Path own = writeFile("chat/20261013/own.jpg");
+        Path second = writeFile("chat/20261013/second.png");
         Path shared = writeFile("chat/20261013/shared.jpg");
         Path rec = writeFile("rec/20261013/r.jpg");
         when(sessions.selectById(900L)).thenReturn(session(900L, USER_ID, null, "带图对话"));
-        when(messages.selectImageUrlsBySession(900L)).thenReturn(
-                List.of("chat/20261013/own.jpg", "chat/20261013/shared.jpg", "rec/20261013/r.jpg"));
+        // 图片行（多图提问的每一张）与 t_ai_message.image_url 由一条 UNION 查询一起返回
+        when(messages.selectImageUrlsBySession(900L)).thenReturn(List.of(
+                "chat/20261013/own.jpg", "chat/20261013/second.png", "chat/20261013/shared.jpg", "rec/20261013/r.jpg"));
         when(messages.deleteBySession(900L)).thenReturn(4);
         when(messages.selectImageUrlsInUse(any())).thenReturn(List.of("chat/20261013/shared.jpg"));
 
@@ -234,15 +276,18 @@ class AiSessionServiceTest {
 
         InOrder order = inOrder(messages, sessions);
         order.verify(messages).selectImageUrlsBySession(900L);
+        order.verify(messages).deleteImagesBySession(900L);
         order.verify(messages).deleteBySession(900L);
         order.verify(sessions).deleteByIdAndUser(900L, USER_ID);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<String>> checked = ArgumentCaptor.forClass(Collection.class);
         order.verify(messages).selectImageUrlsInUse(checked.capture());
         // 只核对 chat/ 下的图片；识别照片不属于对话，不删除
-        assertThat(checked.getValue()).containsExactly("chat/20261013/own.jpg", "chat/20261013/shared.jpg");
+        assertThat(checked.getValue()).containsExactly(
+                "chat/20261013/own.jpg", "chat/20261013/second.png", "chat/20261013/shared.jpg");
 
         assertThat(own).doesNotExist();
+        assertThat(second).doesNotExist();
         assertThat(shared).exists();
         assertThat(rec).exists();
     }
@@ -252,6 +297,7 @@ class AiSessionServiceTest {
         when(sessions.selectById(901L)).thenReturn(session(901L, USER_ID, null, "纯文字对话"));
         when(messages.selectImageUrlsBySession(901L)).thenReturn(List.of());
         service.delete(USER_ID, 901L);
+        verify(messages).deleteImagesBySession(901L);
         verify(messages).deleteBySession(901L);
         verify(sessions).deleteByIdAndUser(901L, USER_ID);
         verify(messages, never()).selectImageUrlsInUse(any());
@@ -301,6 +347,14 @@ class AiSessionServiceTest {
         AiMessage m = new AiMessage(9L, role, content, image, NOW);
         m.setId(id);
         return m;
+    }
+
+    private static AiMessageImage image(Long messageId, int sortNo, String path) {
+        AiMessageImage i = new AiMessageImage();
+        i.setMessageId(messageId);
+        i.setSortNo(sortNo);
+        i.setImageUrl(path);
+        return i;
     }
 
     private static AiSessionSummary summary(Long id, Long recordId, String title, Integer count,

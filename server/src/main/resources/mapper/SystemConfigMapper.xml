@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heban.pestai.server.mapper.SystemConfigMapper">
+
+    <select id="selectAll" resultType="com.heban.pestai.server.entity.SystemConfig">
+        SELECT config_key, config_value, secret, updated_by, updated_at
+        FROM t_system_config
+    </select>
+
+    <!-- 行别名写法（MySQL 8.0.19+），代替已不推荐的 VALUES(col) -->
+    <insert id="upsert" parameterType="com.heban.pestai.server.entity.SystemConfig">
+        INSERT INTO t_system_config (config_key, config_value, secret, updated_by, updated_at)
+        VALUES (#{configKey}, #{configValue}, #{secret}, #{updatedBy}, #{updatedAt}) AS incoming
+        ON DUPLICATE KEY UPDATE
+            config_value = incoming.config_value,
+            secret = incoming.secret,
+            updated_by = incoming.updated_by,
+            updated_at = incoming.updated_at
+    </insert>
+
+    <delete id="deleteByKey">
+        DELETE FROM t_system_config WHERE config_key = #{configKey}
+    </delete>
+</mapper>

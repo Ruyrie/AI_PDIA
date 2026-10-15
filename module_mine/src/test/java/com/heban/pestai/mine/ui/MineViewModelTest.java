@@ -272,6 +272,45 @@ public class MineViewModelTest {
                 MineEvent.GO_SCAN, MineEvent.GO_HISTORY, MineEvent.GO_SETTINGS, MineEvent.GO_ABOUT), events);
     }
 
+    @Test
+    public void profileClick_loggedInOpensEditProfile() {
+        MineViewModel vm = create();
+        List<MineEvent> events = record(vm.getEvent());
+
+        vm.onProfileClick();
+
+        assertEquals(Arrays.asList(MineEvent.GO_EDIT_PROFILE), events);
+    }
+
+    @Test
+    public void profileClick_guestOpensLogin() {
+        userService.loggedIn = false;
+        MineViewModel vm = create();
+        List<MineEvent> events = record(vm.getEvent());
+
+        vm.onProfileClick();
+
+        assertEquals(Arrays.asList(MineEvent.GO_LOGIN), events);
+    }
+
+    @Test
+    public void editProfileSaved_userChangesUpdateNameAndAvatar() {
+        MineViewModel vm = create();
+        vm.refreshIfNeeded();
+
+        // A06 编辑资料保存后 UserSession.saveUser() 经 userChanges() 发出新资料
+        UserVO saved = Fakes.sampleUser();
+        saved.setNickname("老李种番茄");
+        saved.setAvatarUrl("http://10.0.2.2:8080/files/avatar/20261014/new.jpg");
+        vm.onUserChanged(saved);
+
+        assertEquals("老李种番茄", value(vm.getNameText()));
+        assertEquals("老", value(vm.getAvatarText()));
+        assertEquals(saved.getAvatarUrl(), value(vm.getUser()).getAvatarUrl());
+        assertFalse(value(vm.getPersonAvatar()));
+        assertTrue(vm.isDirty());   // 下次可见时再以 user/me 为准
+    }
+
     // ---------- 未生成账号恢复码提醒 ----------
 
     @Test

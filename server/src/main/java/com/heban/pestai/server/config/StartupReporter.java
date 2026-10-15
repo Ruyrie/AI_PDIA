@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import com.heban.pestai.server.client.AsrClient;
 import com.heban.pestai.server.client.ChatClient;
 import com.heban.pestai.server.client.SmsClient;
 import com.heban.pestai.server.client.VisionClient;
@@ -28,10 +29,12 @@ public class StartupReporter implements ApplicationRunner {
     private final VisionClient visionClient;
     private final ChatClient chatClient;
     private final SmsClient smsClient;
+    private final AsrClient asrClient;
+    private final RuntimeConfigService runtimeConfig;
 
     public StartupReporter(Environment environment, PestaiProperties properties, FileStorageService fileStorageService,
                            JwtTokenProvider tokenProvider, VisionClient visionClient, ChatClient chatClient,
-                           SmsClient smsClient) {
+                           SmsClient smsClient, AsrClient asrClient, RuntimeConfigService runtimeConfig) {
         this.environment = environment;
         this.properties = properties;
         this.fileStorageService = fileStorageService;
@@ -39,6 +42,8 @@ public class StartupReporter implements ApplicationRunner {
         this.visionClient = visionClient;
         this.chatClient = chatClient;
         this.smsClient = smsClient;
+        this.asrClient = asrClient;
+        this.runtimeConfig = runtimeConfig;
     }
 
     @Override
@@ -50,10 +55,39 @@ public class StartupReporter implements ApplicationRunner {
         log.info("图片目录：{}（对外地址 {}/files/）", fileStorageService.getRoot(), properties.getPublicBaseUrl());
         log.info("识图：{}", visionClient.isMock() ? "MockVisionClient（未配置 DASHSCOPE_API_KEY）" : "通义千问（模型见上方 ClientConfig 日志）");
         log.info("问答：{}", chatClient.isMock() ? "MockChatClient（未配置 DEEPSEEK_API_KEY）" : "DeepSeek（模型见上方 ClientConfig 日志）");
+        log.info("语音识别：{}", asrClient.isMock() ? "MockAsrClient（未配置 DASHSCOPE_API_KEY）" : "通义千问 ASR（模型见上方 ClientConfig 日志）");
+        log.info("自动备用：{}", fallbackSummary());
         log.info("短信：{}", smsClient.name());
+        log.info("后台管理：http://localhost:{}/admin/（Key 与模型可在后台「系统配置」中修改，立即生效）", port);
         if (tokenProvider.isUsingDevSecret()) {
             log.warn("JWT：正在使用开发默认密钥，生产环境必须配置环境变量 JWT_SECRET（至少 32 字节的随机串）");
         }
         log.info("==============================================================");
+    }
+
+    /**
+     * 模型自动备用的启动时状态（docs/后台管理接口.md「八」）：开关、两个备用模型及其 Key 是否已配置；
+     * 主模型是 Mock 时该方向不会改用备用模型。开关、模型名与 Key 都可在后台修改，立即生效。
+     */
+    String fallbackSummary() {
+        if (!runtimeConfig.fallbackEnabled()) {
+            return "关闭（AI_FALLBACK_ENABLED=false）";
+        }
+        return "开启 —— 问答 " + direction(chatClient.isMock(), RuntimeConfigItem.CHAT_FALLBACK_MODEL,
+                RuntimeConfigItem.DASHSCOPE_API_KEY)
+                + "；识图 " + direction(visionClient.isMock(), RuntimeConfigItem.VISION_FALLBACK_MODEL,
+                RuntimeConfigItem.DEEPSEEK_API_KEY)
+                + "（主模型在任何内容之前失败时改用备用，之后 60 秒内直接使用备用；App 不提示）";
+    }
+
+    private String direction(boolean primaryIsMock, RuntimeConfigItem model, RuntimeConfigItem key) {
+        String name = runtimeConfig.get(model);
+        if (primaryIsMock) {
+            return "备用 " + name + " 不启用（主模型为 Mock）";
+        }
+        if (runtimeConfig.get(key).isBlank()) {
+            return "备用 " + name + " 不启用（未配置 " + key.key() + "）";
+        }
+        return "备用 " + name;
     }
 }

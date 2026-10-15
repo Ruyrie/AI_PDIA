@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A06 完善资料（第 2 步）：顶栏「完善资料」+ 右侧「跳过」，4dp 进度条（100%），头像、昵称、身份、作物（所在地区已移除） -->
+<!--
+    A06 完善资料（第 2 步）：顶栏「完善资料」+ 右侧「跳过」，4dp 进度条（100%），头像、昵称、身份、作物（所在地区已移除）。
+    编辑资料模式（M01 我的进入，vm.editMode）：顶栏标题由页面改为「编辑资料」，隐藏「跳过」、进度条与步骤说明，按钮「保存」。
+-->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -35,13 +38,15 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:text="@string/account_skip"
-                app:onSafeClick="@{() -> vm.skip()}" />
+                app:onSafeClick="@{() -> vm.skip()}"
+                app:visible="@{!vm.editMode}" />
         </com.google.android.material.appbar.MaterialToolbar>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="@dimen/account_progress_height"
-            android:background="?attr/colorPrimary" />
+            android:background="?attr/colorPrimary"
+            app:visible="@{!vm.editMode}" />
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
@@ -65,7 +70,8 @@
                     android:layout_height="wrap_content"
                     android:text="@string/account_step_2_of_2"
                     android:textAppearance="?attr/textAppearanceLabelMedium"
-                    android:textColor="?attr/colorPrimary" />
+                    android:textColor="?attr/colorPrimary"
+                    app:visible="@{!vm.editMode}" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -73,9 +79,11 @@
                     android:layout_marginTop="4dp"
                     android:text="@string/account_profile_desc"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    app:visible="@{!vm.editMode}" />
 
-                <!-- 头像：96dp 圆形，primaryContainer 底显示昵称首字；右下角 36dp 相机角标；上传中显示进度圈 -->
+                <!-- 头像：96dp 圆形，primaryContainer 底显示昵称首字；右下角 36dp 相机角标；上传中显示进度圈；
+                     点击弹出「拍照 / 从相册选择 / 取消」 -->
                 <FrameLayout
                     android:id="@+id/profile_avatar_container"
                     android:layout_width="104dp"
@@ -208,7 +216,8 @@
                         android:layout_height="@dimen/pest_button_height_form"
                         android:enabled="@{vm.canSave}"
                         android:onClick="@{() -> vm.save()}"
-                        android:text="@{vm.saving ? `` : @string/account_start_use}" />
+                        app:accountProfileEdit="@{vm.editMode}"
+                        app:accountProfileSaving="@{vm.saving}" />
 
                     <com.google.android.material.progressindicator.CircularProgressIndicator
                         android:layout_width="wrap_content"

@@ -9,9 +9,9 @@ import com.heban.pestai.common.vo.RecordItemVO;
 import com.heban.pestai.common.vo.SessionDetailVO;
 import com.heban.pestai.common.vo.SessionItemVO;
 import com.heban.pestai.common.vo.SessionVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 import com.heban.pestai.network.PageVO;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,16 +27,20 @@ public class FakeAiRepository implements AiRepository {
     public static final class SendCall {
         public final long sessionId;
         public final String content;
-        @Nullable
-        public final String imageUrl;
+        public final List<String> imageUrls;
         public final boolean regenerate;
 
-        SendCall(long sessionId, String content, @Nullable String imageUrl, boolean regenerate) {
+        SendCall(long sessionId, String content, List<String> imageUrls, boolean regenerate) {
             this.sessionId = sessionId;
             this.content = content;
-            this.imageUrl = imageUrl;
+            this.imageUrls = new ArrayList<>(imageUrls);
             this.regenerate = regenerate;
         }
+    }
+
+    /** 按本地 Uri 返回上传结果（可为每张图片返回不同的 SingleSubject，控制完成顺序） */
+    public interface Upload {
+        Single<String> upload(String localUri);
     }
 
     public interface Answer {
@@ -47,24 +51,24 @@ public class FakeAiRepository implements AiRepository {
         Single<PageVO<SessionItemVO>> page(int page, int size);
     }
 
-    public boolean guest;
+    /** 按录音文件返回识别结果 */
+    public interface Asr {
+        Single<String> recognize(File wav);
+    }
 
-    public Single<List<SuggestionVO>> suggestionsResult = Single.just(Collections.emptyList());
-    public int suggestionsCalls;
+    public boolean guest;
 
     public long nextSessionId = 512;
     public final List<Long> createSessionRecordIds = new ArrayList<>();
     public Single<SessionVO> createSessionResult;
 
     public Single<String> uploadResult = Single.just("http://10.0.2.2:8080/files/chat/20261013/8f2c.jpg");
+    public Upload upload = uri -> uploadResult;
     public final List<String> uploadCalls = new ArrayList<>();
 
     public final List<SendCall> sendCalls = new ArrayList<>();
     public Answer answer = call -> contents("从照片看，", "叶背霉层比上一张更密。");
 
-    public Single<List<RecordItemVO>> recentResult = Single.just(Collections.emptyList());
-    public int recentCalls;
-    public final List<Integer> recentSizes = new ArrayList<>();
     public Single<RecordItemVO> recordResult = Single.error(new IllegalStateException("not found"));
     public final List<Long> recordCalls = new ArrayList<>();
 
@@ -75,16 +79,14 @@ public class FakeAiRepository implements AiRepository {
     public Completable deleteResult = Completable.complete();
     public final List<Long> deleteCalls = new ArrayList<>();
 
+    /** 语音识别默认成功 */
+    public Single<String> asrResult = Single.just("番茄叶子发黄怎么办");
+    public Asr asr = wav -> asrResult;
+    public final List<File> asrCalls = new ArrayList<>();
+
     @Override
     public boolean isGuest() {
         return guest;
-    }
-
-    @NonNull
-    @Override
-    public Single<List<SuggestionVO>> suggestions() {
-        suggestionsCalls++;
-        return suggestionsResult;
     }
 
     @NonNull
@@ -104,14 +106,14 @@ public class FakeAiRepository implements AiRepository {
     @Override
     public Single<String> uploadImage(@NonNull String localUri) {
         uploadCalls.add(localUri);
-        return uploadResult;
+        return upload.upload(localUri);
     }
 
     @NonNull
     @Override
-    public Flowable<StreamChunk> sendMessage(long sessionId, @NonNull String content, @Nullable String imageUrl,
+    public Flowable<StreamChunk> sendMessage(long sessionId, @NonNull String content, @NonNull List<String> imageUrls,
                                              boolean regenerate) {
-        SendCall call = new SendCall(sessionId, content, imageUrl, regenerate);
+        SendCall call = new SendCall(sessionId, content, imageUrls, regenerate);
         sendCalls.add(call);
         return answer.answer(call);
     }
@@ -139,20 +141,29 @@ public class FakeAiRepository implements AiRepository {
 
     @NonNull
     @Override
-    public Single<List<RecordItemVO>> recentRecords(int size) {
-        recentCalls++;
-        recentSizes.add(size);
-        return recentResult;
-    }
-
-    @NonNull
-    @Override
     public Single<RecordItemVO> record(long id) {
         recordCalls.add(id);
         return recordResult;
     }
 
+    @NonNull
+    @Override
+    public Single<String> recognizeSpeech(@NonNull File wav) {
+        asrCalls.add(wav);
+        return asr.recognize(wav);
+    }
+
     // ==================== 构造测试数据 ====================
+
+    /** 上传结果地址：按本地 Uri 生成，便于断言顺序 */
+    public static String urlOf(String localUri) {
+        return "http://10.0.2.2:8080/files/chat/20261014/" + Math.abs(localUri.hashCode()) + ".jpg";
+    }
+
+    /** 立即成功的上传，地址为 {@link #urlOf(String)} */
+    public static Single<String> urlSingle(String localUri) {
+        return Single.just(urlOf(localUri));
+    }
 
     /** 只有正文片段的回答 */
     public static Flowable<StreamChunk> contents(String... texts) {
@@ -161,13 +172,6 @@ public class FakeAiRepository implements AiRepository {
             list.add(StreamChunk.content(t));
         }
         return Flowable.fromIterable(list);
-    }
-
-    public static SuggestionVO suggestion(long id, String text) {
-        SuggestionVO vo = new SuggestionVO();
-        vo.setId(id);
-        vo.setText(text);
-        return vo;
     }
 
     public static RecordItemVO record(long id, String status, String name, Double confidence, String severity) {

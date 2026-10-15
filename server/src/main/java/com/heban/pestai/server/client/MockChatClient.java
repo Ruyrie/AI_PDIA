@@ -14,6 +14,8 @@ import com.heban.pestai.server.config.PestaiProperties;
 public class MockChatClient implements ChatClient {
 
     private static final int CHUNK_CODE_POINTS = 6;
+    /** Mock 的模型名（记录到 t_ai_message.model / t_recognition.model） */
+    public static final String MODEL_NAME = "mock";
 
     private final PestaiProperties.Mock mock;
     /** 是否模拟思考片段（识图模型的 Mock 委托本类时关闭：识图模型没有思考片段） */
@@ -64,6 +66,11 @@ public class MockChatClient implements ChatClient {
     @Override
     public boolean isMock() {
         return true;
+    }
+
+    @Override
+    public String modelName() {
+        return MODEL_NAME;
     }
 
     /** 按 Unicode 码点切片；换行单独保留在片段中 */

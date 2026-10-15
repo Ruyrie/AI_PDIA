@@ -5,14 +5,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.heban.pestai.common.vo.RecordItemVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 
 import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.List;
 
 public class AiFormatTest {
 
@@ -34,14 +32,6 @@ public class AiFormatTest {
         assertEquals("88%", AiFormat.percent(0.875));
         assertEquals("100%", AiFormat.percent(1.0));
         assertEquals("", AiFormat.percent(null));
-    }
-
-    @Test
-    public void latestLabelAndTitle() {
-        RecordItemVO vo = cucumber();
-        assertEquals("最近识别 · 今天 14:20", AiFormat.latestLabel(vo, LocalDateTime.of(2026, 10, 13, 18, 0)));
-        assertEquals("最近识别 · 昨天 14:20", AiFormat.latestLabel(vo, LocalDateTime.of(2026, 10, 14, 8, 0)));
-        assertEquals("黄瓜霜霉病 · 匹配度 92%", AiFormat.latestTitle(vo));
     }
 
     @Test
@@ -72,33 +62,8 @@ public class AiFormatTest {
         assertEquals("", AiFormat.trim(null));
     }
 
-    @Test
-    public void defaultSuggestions() {
-        List<SuggestionVO> list = AiConstants.defaultSuggestions();
-        assertEquals(3, list.size());
-        assertEquals(-1, list.get(0).getId());
-        assertEquals("番茄叶片发黄卷曲是什么原因？", list.get(0).getText());
-        assertEquals("白粉病和霜霉病怎么区分？", list.get(1).getText());
-        assertEquals("蚜虫用什么办法防治效果好？", list.get(2).getText());
-    }
-
     private static Date at(LocalDateTime time) {
         return Date.from(time.atZone(ZoneId.systemDefault()).toInstant());
-    }
-
-    @Test
-    public void recordSubtitle() {
-        RecordItemVO vo = cucumber();
-        vo.setMode("PEST");
-        LocalDateTime now = LocalDateTime.of(2026, 10, 13, 18, 0);
-        assertEquals("病虫害 · 匹配度 92% · 今天 14:20", AiFormat.recordSubtitle(vo, now));
-        vo.setMode("CROP");
-        vo.setConfidence(null);
-        assertEquals("作物 / 杂草 · 今天 14:20", AiFormat.recordSubtitle(vo, now));
-        vo.setMode(null);
-        vo.setCreatedAt(null);
-        assertEquals("", AiFormat.recordSubtitle(vo, now));
-        assertEquals("黄瓜霜霉病", AiFormat.recordName(cucumber()));
     }
 
     @Test
@@ -123,10 +88,7 @@ public class AiFormatTest {
     }
 
     @Test
-    public void questionTemplates_andDefaultImageQuestion() {
-        List<String> templates = AiConstants.questionTemplates();
-        assertEquals(5, templates.size());
-        assertEquals("白菜软腐病怎么预防？", templates.get(3));
+    public void defaultImageQuestion_unchanged() {
         assertEquals("服务器依赖这句话逐字一致", "请帮我看看这张照片里的作物有什么问题",
                 AiConstants.DEFAULT_IMAGE_QUESTION);
     }

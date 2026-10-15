@@ -68,14 +68,28 @@
                         android:text="@string/mine_app_name"
                         android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
+                    <!-- 连续点击 5 次打开「服务器地址」设置（不用 onSafeClick：防连点会吞掉快速连点） -->
                     <TextView
                         android:id="@+id/about_tv_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
+                        android:onClick="@{() -> vm.onVersionClick()}"
                         android:text="@{vm.versionText}"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         tools:text="拍照识病虫 · 版本 1.0.0（1）" />
+
+                    <!-- 使用自定义服务器地址时显示 -->
+                    <TextView
+                        android:id="@+id/about_tv_server"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@{vm.serverText}"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:visible="@{vm.customServer}"
+                        tools:text="服务器：http://47.100.1.2" />
                 </LinearLayout>
 
                 <!-- 检查更新（v1.0 只提示功能尚未开放） -->

@@ -25,4 +25,12 @@ public interface StreamCallback {
      */
     default void onReasoning() throws IOException {
     }
+
+    /**
+     * 本次回答将由哪个模型生成（FallbackChatClient 在每次尝试开始前、任何片段之前回调；其他实现不回调）。
+     * 改用备用模型时 fallback 为 true，reason 为主模型的失败原因摘要（不含密钥），否则 reason 为 null。
+     * AiChatService 据此在 t_ai_message 中记录 model、fallback（App 不感知）。
+     */
+    default void onModel(String model, boolean fallback, String reason) {
+    }
 }

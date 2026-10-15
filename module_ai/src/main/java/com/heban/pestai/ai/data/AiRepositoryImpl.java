@@ -15,7 +15,6 @@ import com.heban.pestai.common.vo.RecordItemVO;
 import com.heban.pestai.common.vo.SessionDetailVO;
 import com.heban.pestai.common.vo.SessionItemVO;
 import com.heban.pestai.common.vo.SessionVO;
-import com.heban.pestai.common.vo.SuggestionVO;
 import com.heban.pestai.common.vo.UploadVO;
 import com.heban.pestai.network.ApiException;
 import com.heban.pestai.network.ApiResponse;
@@ -41,13 +40,15 @@ import retrofit2.Response;
 
 /**
  * AI 问答 Repository：普通接口经 RxResult 解包为 VO；流式回答用 Flowable.create（BUFFER 背压）
- * 包装 OkHttp 同步请求并逐行解析为带类型的片段（思考 / 正文）；图片先用 lib_base 的 ImageCompressor 压缩再上传。
+ * 包装 OkHttp 同步请求并逐行解析为带类型的片段（思考 / 正文）；图片先用 lib_base 的 ImageCompressor 压缩再上传；
+ * 语音输入的录音（WAV）原样以 multipart 上传识别。
  */
 @Singleton
 public class AiRepositoryImpl implements AiRepository {
 
     private static final String UPLOAD_DIR = "ai_upload";
     private static final MediaType JPEG = MediaType.get("image/jpeg");
+    private static final MediaType WAV = MediaType.get("audio/wav");
 
     private final AiApi api;
     private final AiStreamApi streamApi;
@@ -74,12 +75,6 @@ public class AiRepositoryImpl implements AiRepository {
 
     @NonNull
     @Override
-    public Single<List<SuggestionVO>> suggestions() {
-        return api.suggestions().compose(RxResult.<List<SuggestionVO>>transform());
-    }
-
-    @NonNull
-    @Override
     public Single<SessionVO> createSession(@Nullable Long recordId) {
         return api.createSession(new CreateSessionReq(recordId)).compose(RxResult.<SessionVO>transform());
     }
@@ -87,7 +82,7 @@ public class AiRepositoryImpl implements AiRepository {
     @NonNull
     @Override
     public Single<String> uploadImage(@NonNull String localUri) {
-        // 用 create + tryOnError：停止生成后才出现的压缩错误直接忽略，不会进入 RxJava 全局错误处理
+        // 用 create + tryOnError：移除图片（取消上传）后才出现的压缩错误直接忽略，不会进入 RxJava 全局错误处理
         return Single.<File>create(emitter -> {
                     try {
                         emitter.onSuccess(compress(localUri));
@@ -126,9 +121,9 @@ public class AiRepositoryImpl implements AiRepository {
 
     @NonNull
     @Override
-    public Flowable<StreamChunk> sendMessage(long sessionId, @NonNull String content, @Nullable String imageUrl,
+    public Flowable<StreamChunk> sendMessage(long sessionId, @NonNull String content, @NonNull List<String> imageUrls,
                                              boolean regenerate) {
-        SendMessageReq request = new SendMessageReq(content, imageUrl, regenerate);
+        SendMessageReq request = new SendMessageReq(content, imageUrls, regenerate);
         return Flowable.<StreamChunk>create(emitter -> {
             Call<ResponseBody> call = streamApi.sendMessage(sessionId, request);
             // dispose（停止生成 / 页面销毁）时取消请求，阻塞中的 readUtf8Line() 随之抛出 IOException
@@ -200,14 +195,18 @@ public class AiRepositoryImpl implements AiRepository {
 
     @NonNull
     @Override
-    public Single<List<RecordItemVO>> recentRecords(int size) {
-        return Single.defer(() -> ServiceHub.get(IRecordService.class).recent(size));
+    public Single<RecordItemVO> record(long id) {
+        return Single.defer(() -> ServiceHub.get(IRecordService.class).get(id));
     }
 
     @NonNull
     @Override
-    public Single<RecordItemVO> record(long id) {
-        return Single.defer(() -> ServiceHub.get(IRecordService.class).get(id));
+    public Single<String> recognizeSpeech(@NonNull File wav) {
+        return Single.defer(() -> {
+            RequestBody body = RequestBody.create(wav, WAV);
+            MultipartBody.Part part = MultipartBody.Part.createFormData("audio", wav.getName(), body);
+            return api.recognizeSpeech(part).compose(RxResult.<AsrVO>transform());
+        }).map(vo -> vo.getText() == null ? "" : vo.getText());
     }
 
     private static void deleteQuietly(@NonNull File file) {

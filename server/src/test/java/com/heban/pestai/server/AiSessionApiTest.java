@@ -24,8 +24,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.heban.pestai.server.admin.mapper.AdminMapper;
 import com.heban.pestai.server.common.BizException;
 import com.heban.pestai.server.entity.User;
+import com.heban.pestai.server.mapper.SystemConfigMapper;
 import com.heban.pestai.server.mapper.UserMapper;
 import com.heban.pestai.server.security.JwtTokenProvider;
 import com.heban.pestai.server.service.AiSessionService;
@@ -63,6 +65,11 @@ class AiSessionApiTest {
 
     @MockBean
     private UserMapper userMapper;
+    /** 后台管理员表与后台配置表：启动时会读取，测试中不访问数据库 */
+    @MockBean
+    private AdminMapper adminMapper;
+    @MockBean
+    private SystemConfigMapper systemConfigMapper;
     @MockBean
     private AiSessionService aiSessionService;
 
@@ -125,8 +132,10 @@ class AiSessionApiTest {
         RecordItemVO record = new RecordItemVO(2036L, "PEST", "http://10.0.2.2:8080/files/rec/20261013/r.jpg", "SUCCESS",
                 "黄瓜霜霉病", new BigDecimal("0.92"), "中度", null, AT);
         SessionDetailVO detail = new SessionDetailVO(512L, 2036L, "追问：黄瓜霜霉病", record, List.of(
-                new ChatMessageVO("user", "这个病怎么处理？", "http://10.0.2.2:8080/files/chat/20261013/q.jpg", AT, null, null),
-                new ChatMessageVO("assistant", "处理建议……", null, AT, "先看病斑", 12345)));
+                new ChatMessageVO("user", "", "http://10.0.2.2:8080/files/chat/20261013/q.jpg",
+                        List.of("http://10.0.2.2:8080/files/chat/20261013/q.jpg",
+                                "http://10.0.2.2:8080/files/chat/20261013/r.png"), AT, null, null),
+                new ChatMessageVO("assistant", "处理建议……", null, List.of(), AT, "先看病斑", 12345)));
         when(aiSessionService.detail(USER_ID, 512L)).thenReturn(detail);
 
         mvc.perform(get("/pestai/v1/ai/sessions/512").header("Authorization", bearer))
@@ -135,7 +144,13 @@ class AiSessionApiTest {
                 .andExpect(jsonPath("$.data.record.top_name").value("黄瓜霜霉病"))
                 .andExpect(jsonPath("$.data.record.confidence").value(0.92))
                 .andExpect(jsonPath("$.data.messages.length()").value(2))
+                .andExpect(jsonPath("$.data.messages[0].content").value(""))
                 .andExpect(jsonPath("$.data.messages[0].image_url").value("http://10.0.2.2:8080/files/chat/20261013/q.jpg"))
+                .andExpect(jsonPath("$.data.messages[0].image_urls.length()").value(2))
+                .andExpect(jsonPath("$.data.messages[0].image_urls[1]").value("http://10.0.2.2:8080/files/chat/20261013/r.png"))
+                .andExpect(jsonPath("$.data.messages[1].image_url").isEmpty())
+                .andExpect(jsonPath("$.data.messages[1].image_urls").isArray())
+                .andExpect(jsonPath("$.data.messages[1].image_urls.length()").value(0))
                 .andExpect(jsonPath("$.data.messages[0].reasoning_content").isEmpty())
                 .andExpect(jsonPath("$.data.messages[1].reasoning_content").value("先看病斑"))
                 .andExpect(jsonPath("$.data.messages[1].reasoning_ms").value(12345))

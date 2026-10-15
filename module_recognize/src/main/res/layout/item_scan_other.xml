@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- R01「其他可能」一行：名称 + 72 × 4dp 小进度条 + 32dp 宽百分比，行高 52dp -->
+<!-- R01「其他可能」一行：行头（名称 + 72 × 4dp 小进度条 + 32dp 宽百分比 + 展开箭头，高 52dp）；
+     有判断依据时点按行头展开下方的「为什么可能是它」「与{最可能结果}的区别」两段（空白的一段不显示） -->
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
@@ -8,48 +9,131 @@
 
         <variable
             name="item"
-            type="com.heban.pestai.common.vo.CandidateVO" />
+            type="com.heban.pestai.recognize.model.OtherItem" />
     </data>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="0dp"
+        <!-- 行头：可展开时可点击（OtherAdapter 设置点击、无障碍文字与动作） -->
+        <LinearLayout
+            android:id="@+id/scanOtherHeader"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="@{item.name}"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            tools:text="黄瓜细菌性角斑病" />
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:minHeight="52dp"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:max="100"
-            app:indicatorColor="?attr/colorOutline"
-            app:indicatorTrackGapSize="0dp"
-            app:scanBarPercent="@{item.confidence}"
-            app:trackColor="?attr/colorSurfaceContainerHighest"
-            app:trackCornerRadius="2dp"
-            app:trackStopIndicatorSize="0dp"
-            app:trackThickness="4dp" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@{item.name}"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                tools:text="黄瓜细菌性角斑病" />
 
-        <TextView
-            android:layout_width="32dp"
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:max="100"
+                app:indicatorColor="?attr/colorOutline"
+                app:indicatorTrackGapSize="0dp"
+                app:scanBarPercent="@{item.confidence}"
+                app:trackColor="?attr/colorSurfaceContainerHighest"
+                app:trackCornerRadius="2dp"
+                app:trackStopIndicatorSize="0dp"
+                app:trackThickness="4dp" />
+
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:gravity="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                app:scanPercentText="@{item.confidence}"
+                tools:text="6%" />
+
+            <ImageView
+                android:id="@+id/scanOtherChevron"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_expand_more"
+                android:visibility="gone"
+                app:scanOtherChevron="@{item}"
+                app:tint="?attr/colorOnSurfaceVariant"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <!-- 展开区：两段之间由 showDividers 留 10dp（只在两段都显示时） -->
+        <LinearLayout
+            android:id="@+id/scanOtherDetail"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:gravity="end"
-            android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            app:scanPercentText="@{item.confidence}"
-            tools:text="6%" />
+            android:divider="@drawable/scan_space_10"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="14dp"
+            android:showDividers="middle"
+            android:visibility="gone"
+            app:visible="@{item.expanded}"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:scanVisibleIfNotEmpty="@{item.reason}">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/scan_result_other_reason"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@{item.reason}"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="病斑同样受叶脉限制呈多角形，叶面发黄。" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:scanVisibleIfNotEmpty="@{item.difference}">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@{item.differenceLabel}"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="与黄瓜霜霉病的区别" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@{item.difference}"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="角斑病叶背病斑处有白色菌脓、后期穿孔；霜霉病叶背是灰黑色霉层。" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </layout>

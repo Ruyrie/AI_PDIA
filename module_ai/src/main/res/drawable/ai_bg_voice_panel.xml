@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 录音浮层：20dp 圆角；颜色由 backgroundTint 设置（正常 ai_voice_panel 深色半透明，上滑取消 ai_voice_panel_cancel 红色半透明） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/white" />
+    <corners android:radius="20dp" />
+</shape>

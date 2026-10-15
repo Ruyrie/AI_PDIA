@@ -60,6 +60,13 @@
         WHERE id = #{id}
     </update>
 
+    <select id="selectAvatarUrlsInUse" resultType="java.lang.String">
+        SELECT DISTINCT avatar_url
+        FROM t_user
+        WHERE avatar_url IN
+        <foreach collection="urls" item="url" open="(" separator="," close=")">#{url}</foreach>
+    </select>
+
     <update id="updatePasswordAndBumpVersion">
         UPDATE t_user
         SET password_hash = #{passwordHash},

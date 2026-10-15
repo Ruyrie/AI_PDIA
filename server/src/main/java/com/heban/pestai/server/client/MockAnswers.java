@@ -105,12 +105,14 @@ final class MockAnswers {
     /** 模拟的思考过程（一小段，先于正文推送，便于 App 联调思考区） */
     static String reasoning(List<ChatMessage> messages) {
         String question = MockChatClient.lastUserText(messages);
-        boolean withImage = !messages.isEmpty() && messages.get(messages.size() - 1).hasImage();
+        int images = messages.isEmpty() ? 0 : messages.get(messages.size() - 1).imageDataUrls().size();
         String conclusion = conclusionTopName(messages);
 
         StringBuilder sb = new StringBuilder();
-        if (withImage) {
+        if (images == 1) {
             sb.append("用户发来一张照片，先看叶片、茎秆上有没有病斑、霉层或虫体。");
+        } else if (images > 1) {
+            sb.append("用户发来 ").append(images).append(" 张照片，逐张看叶片、茎秆上有没有病斑、霉层或虫体。");
         }
         sb.append("用户问的是「").append(Rules.truncate(question.strip(), 20)).append("」。");
         if (conclusion != null) {

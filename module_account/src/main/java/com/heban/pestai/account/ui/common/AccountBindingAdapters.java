@@ -68,6 +68,19 @@ public final class AccountBindingAdapters {
         }
     }
 
+    /**
+     * A06 底部按钮文字：保存中为空（按钮内显示进度圈）；编辑资料模式为「保存」，完善资料模式为「开始使用」。
+     * 同样避免在布局里写嵌套三元表达式。
+     */
+    @BindingAdapter(value = {"accountProfileSaving", "accountProfileEdit"})
+    public static void setProfileSubmitText(TextView view, boolean saving, boolean edit) {
+        if (saving) {
+            view.setText("");
+        } else {
+            view.setText(edit ? R.string.account_profile_save : R.string.account_start_use);
+        }
+    }
+
     @BindingAdapter("accountSrc")
     public static void setSrc(ImageView view, @DrawableRes int res) {
         if (res != 0) {

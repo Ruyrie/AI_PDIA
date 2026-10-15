@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 变焦档位文字：当前档位强调色 #AAD291，其余白色 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/scan_accent" android:state_selected="true" />
+    <item android:color="@color/scan_on_dark" />
+</selector>

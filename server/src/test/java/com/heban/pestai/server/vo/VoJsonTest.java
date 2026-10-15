@@ -44,7 +44,8 @@ class VoJsonTest {
         RecognitionVO vo = new RecognitionVO(1024L, "PEST", "http://10.0.2.2:8080/files/rec/20261013/a.jpg", "SUCCESS",
                 "黄瓜霜霉病", new BigDecimal("0.92"), "中度", null, LocalDateTime.of(2026, 10, 13, 14, 20, 5),
                 "卵菌病害", "叶部", true, "依据", 3,
-                List.of(new CandidateVO("黄瓜细菌性角斑病", new BigDecimal("0.06"))), "通义千问");
+                List.of(new CandidateVO("黄瓜细菌性角斑病", new BigDecimal("0.06"), "也有多角形病斑", "叶背是菌脓、没有霉层"),
+                        new CandidateVO("缺镁症（生理性）", new BigDecimal("0.02"), null, null)), "通义千问");
         String text = mapper.writeValueAsString(vo);
         JsonNode json = mapper.readTree(text);
 
@@ -54,6 +55,14 @@ class VoJsonTest {
         assertThat(json.path("created_at").asText()).isEqualTo("2026-10-13 14:20:05");
         assertThat(text).contains("\"confidence\":0.92").contains("\"spread_fast\":true");
         assertThat(json.path("others").path(0).path("confidence").decimalValue()).isEqualByComparingTo("0.06");
+        // 其他可能：reason / difference 字段名不变；没有时为 null（字段保留，不省略）
+        assertThat(json.path("others").path(0).fieldNames()).toIterable()
+                .containsExactly("name", "confidence", "reason", "difference");
+        assertThat(json.path("others").path(0).path("reason").asText()).isEqualTo("也有多角形病斑");
+        assertThat(json.path("others").path(0).path("difference").asText()).isEqualTo("叶背是菌脓、没有霉层");
+        assertThat(json.path("others").path(1).has("reason")).isTrue();
+        assertThat(json.path("others").path(1).path("reason").isNull()).isTrue();
+        assertThat(json.path("others").path(1).path("difference").isNull()).isTrue();
     }
 
     @Test
@@ -73,6 +82,15 @@ class VoJsonTest {
         assertThat(mapper.writeValueAsString(new AppVersionVO(2, "1.1.0", "u", false, null)))
                 .isEqualTo("{\"version_code\":2,\"version_name\":\"1.1.0\",\"download_url\":\"u\","
                         + "\"force_update\":false,\"release_note\":null}");
+    }
+
+    @Test
+    void suggestionVoHasNullableCrop() throws Exception {
+        assertThat(mapper.writeValueAsString(new SuggestionVO(301L, "番茄叶片发黄卷曲是什么原因？", "番茄")))
+                .isEqualTo("{\"id\":301,\"text\":\"番茄叶片发黄卷曲是什么原因？\",\"crop\":\"番茄\"}");
+        // 通用问题 / 未匹配：crop 为 null（字段保留，不省略）
+        assertThat(mapper.writeValueAsString(new SuggestionVO(305L, "秋季大棚白粉病怎么防治？", null)))
+                .isEqualTo("{\"id\":305,\"text\":\"秋季大棚白粉病怎么防治？\",\"crop\":null}");
     }
 
     @Test
@@ -96,10 +114,17 @@ class VoJsonTest {
                 .isEqualTo("{\"session_id\":512,\"record_id\":null,\"title\":\"新对话\",\"last_message\":null,"
                         + "\"message_count\":1,\"updated_at\":\"2026-10-13 14:23:05\"}");
 
-        ChatMessageVO answer = new ChatMessageVO("assistant", "答", null, at, "想", 1200);
+        ChatMessageVO answer = new ChatMessageVO("assistant", "答", null, null, at, "想", 1200);
+        // 没有图片：image_url 为 null，image_urls 为空数组（不为 null）
         assertThat(mapper.writeValueAsString(answer))
-                .isEqualTo("{\"role\":\"assistant\",\"content\":\"答\",\"image_url\":null,"
+                .isEqualTo("{\"role\":\"assistant\",\"content\":\"答\",\"image_url\":null,\"image_urls\":[],"
                         + "\"created_at\":\"2026-10-13 14:23:05\",\"reasoning_content\":\"想\",\"reasoning_ms\":1200}");
+        ChatMessageVO question = new ChatMessageVO("user", "", "http://x/files/chat/a.jpg",
+                List.of("http://x/files/chat/a.jpg", "http://x/files/chat/b.png"), at, null, null);
+        assertThat(mapper.writeValueAsString(question))
+                .isEqualTo("{\"role\":\"user\",\"content\":\"\",\"image_url\":\"http://x/files/chat/a.jpg\","
+                        + "\"image_urls\":[\"http://x/files/chat/a.jpg\",\"http://x/files/chat/b.png\"],"
+                        + "\"created_at\":\"2026-10-13 14:23:05\",\"reasoning_content\":null,\"reasoning_ms\":null}");
 
         JsonNode detail = mapper.readTree(mapper.writeValueAsString(
                 new SessionDetailVO(512L, 2036L, "追问：黄瓜霜霉病", null, List.of(answer))));
@@ -115,7 +140,16 @@ class VoJsonTest {
                 "{\"content\":\"怎么办\",\"image_url\":\"http://x/files/chat/a.jpg\",\"regenerate\":true,\"extra\":1}",
                 MessageRequest.class);
         assertThat(m.getImageUrl()).isEqualTo("http://x/files/chat/a.jpg");
+        assertThat(m.getImageUrls()).isNull();
         assertThat(m.isRegenerateRequested()).isTrue();
+
+        MessageRequest multi = mapper.readValue(
+                "{\"content\":\"\",\"image_urls\":[\"http://x/files/chat/a.jpg\",\"http://x/files/chat/b.png\"]}",
+                MessageRequest.class);
+        assertThat(multi.getContent()).isEmpty();
+        assertThat(multi.getImageUrls()).containsExactly("http://x/files/chat/a.jpg", "http://x/files/chat/b.png");
+        assertThat(multi.getImageUrl()).isNull();
+        assertThat(multi.isRegenerateRequested()).isFalse();
 
         SmsSendRequest s = mapper.readValue("{\"phone\":\"13800005678\",\"scene\":\"REBIND\"}", SmsSendRequest.class);
         assertThat(s.getScene().name()).isEqualTo("REBIND");

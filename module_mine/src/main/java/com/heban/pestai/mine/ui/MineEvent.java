@@ -16,8 +16,10 @@ public enum MineEvent {
     GO_SETTINGS,
     /** M03 关于 */
     GO_ABOUT,
-    /** A03 登录（游客点「登录 / 注册」） */
+    /** A03 登录（游客点「登录 / 注册」或资料区） */
     GO_LOGIN,
+    /** A06 编辑资料（已登录用户点资料区：头像、昵称、手机号） */
+    GO_EDIT_PROFILE,
     /** A12 账号恢复码（未生成提醒卡片「去生成」） */
     GO_RECOVERY_CODE,
     /** 游客点需要登录的入口：弹出「登录后才能使用」 */

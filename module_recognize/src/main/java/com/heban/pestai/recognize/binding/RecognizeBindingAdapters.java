@@ -23,8 +23,8 @@ import com.google.android.material.progressindicator.CircularProgressIndicatorSp
 import com.google.android.material.progressindicator.IndeterminateDrawable;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.heban.pestai.base.util.DimenUtils;
-import com.heban.pestai.common.vo.CandidateVO;
 import com.heban.pestai.recognize.R;
+import com.heban.pestai.recognize.model.OtherItem;
 import com.heban.pestai.recognize.model.SeverityLevel;
 import com.heban.pestai.recognize.model.StepState;
 import com.heban.pestai.recognize.model.TagItem;
@@ -33,6 +33,7 @@ import com.heban.pestai.recognize.util.Formats;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * module_recognize 的 BindingAdapter（属性名统一加 scan 前缀，不与 lib_base 的通用属性重名）。
@@ -41,6 +42,7 @@ import java.util.List;
 public final class RecognizeBindingAdapters {
 
     private static final long FADE_MS = 150;
+    private static final long CHEVRON_MS = 200;
 
     private RecognizeBindingAdapters() {
     }
@@ -268,11 +270,35 @@ public final class RecognizeBindingAdapters {
         }
     }
 
-    /** 其他可能列表：交给 OtherAdapter 的 submitList()，DiffUtil 局部刷新 */
+    /** 其他可能列表：交给 OtherAdapter.submit()，DiffUtil 局部刷新（只有展开状态变化时带过渡） */
     @BindingAdapter("scanCandidates")
-    public static void setCandidates(RecyclerView view, @Nullable List<CandidateVO> candidates) {
+    public static void setCandidates(RecyclerView view, @Nullable List<OtherItem> items) {
         if (view.getAdapter() instanceof OtherAdapter) {
-            ((OtherAdapter) view.getAdapter()).submitList(candidates);
+            ((OtherAdapter) view.getAdapter()).submit(items);
+        }
+    }
+
+    /**
+     * 其他可能的行尾箭头（expand_more）：可展开的行显示，展开时旋转 180°；
+     * 不可展开的行在列表中有可展开行时 INVISIBLE 占位（各行进度条对齐），否则 GONE。
+     * 同一行（名称相同）展开状态变化时 200ms 旋转动画；首次绑定、复用到其他行时直接设置。
+     */
+    @BindingAdapter("scanOtherChevron")
+    public static void setOtherChevron(ImageView view, @Nullable OtherItem oldItem, @Nullable OtherItem item) {
+        view.animate().cancel();
+        if (item == null || !item.isExpandable()) {
+            view.setRotation(0f);
+            view.setVisibility(item != null && item.isReserveChevron() ? View.INVISIBLE : View.GONE);
+            return;
+        }
+        view.setVisibility(View.VISIBLE);
+        float target = item.isExpanded() ? 180f : 0f;
+        boolean sameRow = oldItem != null && oldItem.isExpandable()
+                && Objects.equals(oldItem.getName(), item.getName());
+        if (sameRow && view.isAttachedToWindow() && view.getRotation() != target) {
+            view.animate().rotation(target).setDuration(CHEVRON_MS).start();
+        } else {
+            view.setRotation(target);
         }
     }
 

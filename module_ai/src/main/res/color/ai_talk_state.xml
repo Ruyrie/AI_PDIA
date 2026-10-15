@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「按住 说话」按钮的按下状态层（M3 pressed 10%）：取消区为 onErrorContainer，其余为 onSurface；没按下时透明 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.10" android:color="?attr/colorOnErrorContainer" android:state_activated="true" android:state_pressed="true" />
+    <item android:alpha="0.10" android:color="?attr/colorOnSurface" android:state_pressed="true" />
+    <item android:color="@android:color/transparent" />
+</selector>

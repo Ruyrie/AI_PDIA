@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Q01 / Q02 输入栏上方的待发送图片：64dp 方形缩略图（圆角 12dp）+ 右上角 20dp 圆形 ✕（向外偏出 6dp）。
+     缩略图之间 8dp（缩略图右侧给 ✕ 留的 6dp + 列表项右边距 2dp）。
+     排队 / 上传中：遮罩 + 小圆形进度；上传失败：遮罩 + error 图标，点按重试；上传完成：点按全屏预览 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="2dp">
+
+    <FrameLayout
+        android:id="@+id/ai_pending_frame"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="6dp"
+        android:background="@drawable/ai_bg_thumb_12"
+        android:clipToOutline="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <ImageView
+            android:id="@+id/ai_pending_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <FrameLayout
+            android:id="@+id/ai_pending_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/pest_scrim"
+            android:visibility="gone">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/ai_pending_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:indeterminate="true"
+                app:indicatorColor="?attr/colorOnPrimary"
+                app:indicatorSize="20dp"
+                app:trackColor="@android:color/transparent"
+                app:trackThickness="2dp" />
+
+            <ImageView
+                android:id="@+id/ai_pending_failed"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_error_fill"
+                android:visibility="gone"
+                app:tint="?attr/colorOnPrimary" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <ImageButton
+        android:id="@+id/ai_pending_remove"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/pest_bg_circle"
+        android:backgroundTint="?attr/colorSurfaceInverse"
+        android:padding="3dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_close"
+        app:tint="?attr/colorOnSurfaceInverse" />
+</FrameLayout>

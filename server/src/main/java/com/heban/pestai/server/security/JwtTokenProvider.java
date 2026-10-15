@@ -49,7 +49,7 @@ public class JwtTokenProvider {
     public JwtTokenProvider(String secret, Duration ttl, Clock clock) {
         boolean blank = secret == null || secret.isBlank();
         this.usingDevSecret = blank;
-        String effective = blank ? DEV_SECRET : secret;
+        String effective = effectiveSecret(secret);
         byte[] bytes = effective.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < 32) {
             throw new IllegalStateException("JWT_SECRET 至少需要 32 字节（256 位），当前只有 " + bytes.length + " 字节");
@@ -64,6 +64,11 @@ public class JwtTokenProvider {
 
     public boolean isUsingDevSecret() {
         return usingDevSecret;
+    }
+
+    /** 实际使用的签名密钥：未配置 JWT_SECRET 时为开发默认值（后台配置加密在未设置 PESTAI_CONFIG_SECRET 时由它派生密钥） */
+    public static String effectiveSecret(String configured) {
+        return configured == null || configured.isBlank() ? DEV_SECRET : configured;
     }
 
     /** 签发令牌 */

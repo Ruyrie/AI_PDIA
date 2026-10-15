@@ -41,7 +41,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Q02 消息列表：引用卡 / 用户文字 / 用户图片 / AI 回答 4 种列表项（ViewBinding）。
+ * Q02 消息列表：引用卡 / 用户文字 / 用户图片（一条消息的全部图片为一项，{@link ImageGridView} 九宫格）/ AI 回答
+ * 4 种列表项（ViewBinding）。
  * 同一条消息只是文字或状态变化时 DiffUtil 返回 {@link #PAYLOAD_CONTENT}，AI 回答只刷新气泡内容（思考区、正文、提示、操作栏），
  * 头像和图片不重新绑定。
  * <p>AI 回答的文字按 {@link TypingTracker} 的进度只显示已「打出」的部分（Markdown 渲染作用在这部分上），
@@ -59,7 +60,8 @@ final class ChatAdapter extends ListAdapter<ChatMessage, RecyclerView.ViewHolder
     interface Listener {
         void onQuoteClick(@NonNull ChatMessage message);
 
-        void onImageClick(@NonNull ChatMessage message);
+        /** 点按用户图片九宫格中的第 index 张 */
+        void onImageClick(@NonNull ChatMessage message, int index);
 
         void onCopy(@NonNull ChatMessage message);
 
@@ -147,7 +149,7 @@ final class ChatAdapter extends ListAdapter<ChatMessage, RecyclerView.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position,
                                  @NonNull List<Object> payloads) {
-        // AI 回答与图片的 bind 本身就是局部刷新（只更新文字 / 状态，图片源不变时不重新加载）
+        // AI 回答与图片的 bind 本身就是局部刷新（只更新文字 / 状态，每格图片源不变时不重新加载）
         onBindViewHolder(holder, position);
     }
 
@@ -229,40 +231,23 @@ final class ChatAdapter extends ListAdapter<ChatMessage, RecyclerView.ViewHolder
 
     final class ImageHolder extends RecyclerView.ViewHolder {
         private final ItemAiUserImageBinding binding;
-        private final int radius;
         @Nullable
         private ChatMessage message;
-        @Nullable
-        private Object boundSource;
 
         ImageHolder(@NonNull ItemAiUserImageBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
-            this.radius = DimenUtils.dp(binding.getRoot().getContext(), 16);
-            binding.aiImageFrame.setOnClickListener(v -> {
+            binding.aiImageGrid.setOnImageClickListener(index -> {
                 if (message != null) {
-                    listener.onImageClick(message);
+                    listener.onImageClick(message, index);
                 }
             });
         }
 
-        @SuppressWarnings("unchecked") // Glide transform(Transformation<Bitmap>...) 的泛型可变参数
         void bind(@NonNull ChatMessage m) {
             message = m;
-            // 上传成功后仍优先显示本地图片，避免切换图片源导致重新加载闪白
-            Object source = m.getLocalUri() != null ? m.getLocalUri() : m.getImageUrl();
-            if (!Objects.equals(source, boundSource)) {
-                boundSource = source;
-                glide.load(source)
-                        .transform(new CenterCrop(), new RoundedCorners(radius))
-                        .into(binding.aiImageView);
-            }
-            boolean uploading = m.getImageState() == ChatMessage.IMAGE_UPLOADING;
-            boolean failed = m.getImageState() == ChatMessage.IMAGE_FAILED;
-            binding.aiImageOverlay.setVisibility(uploading || failed ? View.VISIBLE : View.GONE);
-            binding.aiImageProgress.setVisibility(uploading ? View.VISIBLE : View.GONE);
-            binding.aiImageFailed.setVisibility(failed ? View.VISIBLE : View.GONE);
-            binding.aiImageFrame.setClickable(failed);
+            // 发送后优先显示本地图片，避免切换为服务器地址时重新加载闪白；本地图片读取失败时改用服务器地址
+            binding.aiImageGrid.setImages(glide, m.getImageSources(), m.getImageUrls());
         }
     }
 

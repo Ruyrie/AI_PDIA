@@ -3,4 +3,5 @@
     <string name="main_tab_home">首页</string>
     <string name="main_tab_ai">AI 问答</string>
     <string name="main_tab_mine">我的</string>
+    <string name="main_exit_hint">再按一次退出程序</string>
 </resources>

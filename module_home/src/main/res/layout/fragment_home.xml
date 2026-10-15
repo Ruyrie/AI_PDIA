@@ -188,11 +188,20 @@
                                         android:textColor="?attr/colorOnPrimaryContainer" />
                                 </LinearLayout>
 
+                                <!-- 取景框图标：点击与「拍照识别」相同，进入拍照页（水波纹 + 按下缩小反馈） -->
                                 <FrameLayout
+                                    android:id="@+id/home_scan_icon"
                                     android:layout_width="64dp"
                                     android:layout_height="64dp"
                                     android:layout_marginStart="16dp"
-                                    android:background="@drawable/home_bg_scan_icon">
+                                    android:background="@drawable/home_bg_scan_icon"
+                                    android:clickable="true"
+                                    android:clipToOutline="true"
+                                    android:contentDescription="@string/home_scan_camera"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:onClick="@{() -> vm.onScanClick()}"
+                                    android:stateListAnimator="@animator/home_press_scale">
 
                                     <ImageView
                                         android:layout_width="36dp"

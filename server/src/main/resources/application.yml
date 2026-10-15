@@ -1,4 +1,5 @@
 # pestai-server 配置：所有连接信息与密钥都来自环境变量（${ENV:默认值}），任何 Key 都不写进本文件。
+# API Key、模型名、短信签名与模板也可以在后台管理（/admin/ → 系统配置）中修改，后台的值优先于环境变量，修改后立即生效。
 # 本机开发可把变量写在 server/.env（已被 .gitignore 忽略，格式见 .env.example），启动时自动读取；同名的系统环境变量优先。
 # 环境变量说明见 server/README.md。
 
@@ -7,6 +8,16 @@ server:
   servlet:
     encoding:
       charset: UTF-8
+    # 会话只给后台管理（/admin/）使用：App 接口无状态（JWT），不会创建会话。
+    # Cookie 只在 /admin 路径下发送，HttpOnly + SameSite=Strict；30 分钟无操作过期；不在网址中带会话 ID
+    session:
+      timeout: 30m
+      tracking-modes: cookie
+      cookie:
+        name: PESTAI_ADMIN_SESSION
+        path: /admin
+        http-only: true
+        same-site: strict
   # 流式回答依赖逐段 flush，不开启 gzip
   compression:
     enabled: false
@@ -55,10 +66,19 @@ pestai:
     # HS256 密钥，至少 32 字节；为空时使用开发默认值（启动日志告警），生产环境必须配置
     secret: ${JWT_SECRET:}
     ttl-days: 30
+  # 后台保存的密钥类配置（API Key、AccessKey）的 AES-GCM 加密主密钥；为空时由 JWT_SECRET 派生。
+  # 设置后不要再改：更换后已保存的密钥无法解密（按未设置处理，需在后台重新填写）
+  config-secret: ${PESTAI_CONFIG_SECRET:}
+  admin:
+    # 启动时 t_admin 为空则创建管理员 admin，密码取该值；为空时随机生成并在启动日志中打印一次（首次登录后必须修改）
+    initial-password: ${PESTAI_ADMIN_INITIAL_PASSWORD:}
   ai:
     max-questions-per-minute: 10
     # 单次回答的总时长上限（秒）；放宽到 30 分钟，避免长回答 / 深度思考被打断
     stream-timeout-seconds: 1800
+    # 清理未发送的聊天图片（选图即上传、点 ✕ 删除或最终没发送的图片）与未保存的头像：每天 04:30（Asia/Shanghai）删除
+    # 前天及更早目录中未被任何消息引用的 chat/ 图片、未被任何账号引用的 avatar/ 头像；Spring cron 格式，设为 "-" 关闭
+    orphan-image-cron: ${PESTAI_ORPHAN_IMAGE_CRON:0 30 4 * * *}
   # Key 未配置时 Mock 实现的行为
   mock:
     vision-delay-ms: ${PESTAI_MOCK_VISION_DELAY_MS:1500}
@@ -90,6 +110,29 @@ chat:
   max-tokens: ${CHAT_MAX_TOKENS:393216}
   # 思考强度 none / low / high / max（平台默认 high）
   reasoning-effort: ${CHAT_REASONING_EFFORT:high}
+
+# 模型自动备用（docs/后台管理接口.md「八」）：AI 问答主模型 DeepSeek 失败时改用通义千问（CHAT_FALLBACK_MODEL，用 DASHSCOPE_API_KEY，
+# 开启深度思考）；拍照识别主模型通义千问失败时改用 DeepSeek（VISION_FALLBACK_MODEL，用 DEEPSEEK_API_KEY，关闭思考）。App 不提示，
+# 后台记录每条回答 / 识别所用的模型。开关与两个模型名可在后台「系统配置 → 自动备用」中修改，立即生效；备用模型的 Key 未配置、
+# 主模型为 Mock 时该方向不启用
+ai-fallback:
+  enabled: ${AI_FALLBACK_ENABLED:true}
+  chat-model: ${CHAT_FALLBACK_MODEL:qwen3.8-max}
+  vision-model: ${VISION_FALLBACK_MODEL:deepseek-flash}
+  # 问答：开始请求主模型后这么久没有任何思考 / 正文片段，取消主模型改用备用模型
+  first-chunk-timeout-seconds: 20
+  # 熔断：主模型失败后这段时间内的请求直接交给备用模型，之后再试主模型
+  breaker-seconds: 60
+  # 识别：备用可用时主模型（含重试）最多用的时间，剩余部分（总时限 vision.timeout-seconds = 25 秒）留给备用模型
+  vision-primary-seconds: 15
+
+# 语音识别：通义千问 ASR（与识图共用 DASHSCOPE_API_KEY 与请求地址 vision.url）；未配置 Key 时返回固定的模拟文字
+asr:
+  model: ${ASR_MODEL:qwen3-asr-flash}
+  # 单次识别时限（秒），小于 App 读取超时 30 秒
+  timeout-seconds: 20
+  # 每个用户每分钟最多识别次数
+  max-requests-per-minute: 20
 
 # 短信：auto（阿里云 AccessKey 与签名齐全时用阿里云，否则只打印日志）/ log / aliyun
 # 阿里云「号码认证服务 · 短信认证」（SendSmsVerifyCode）：赠送签名必须搭配赠送模板，模板变量 ${code}、${min}

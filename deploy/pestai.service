@@ -1,0 +1,35 @@
+# pestai-server 后端服务（deploy/install.sh 安装到 /etc/systemd/system/pestai.service）
+# 开机自启，异常退出 5 秒后自动重启；日志写入 journald。
+# 常用命令：systemctl status pestai / systemctl restart pestai / journalctl -u pestai -f
+
+[Unit]
+Description=pestai-server (AI pest identification backend)
+After=network-online.target mysql.service
+Wants=network-online.target mysql.service
+
+[Service]
+Type=simple
+User=pestai
+Group=pestai
+# 工作目录下的 .env（从本机 server\.env 上传的大模型 / 短信密钥）由 Spring Boot 自动读取
+WorkingDirectory=/opt/pestai
+# 服务器专用配置（数据库账号、公网地址、JVM 参数等），是真正的环境变量，优先于 .env 中的同名值
+EnvironmentFile=/etc/pestai/pestai.env
+# $JAVA_OPTS 单独成词：systemd 按空格拆成多个参数
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/pestai/pestai-server.jar
+# JVM 收到 SIGTERM 正常退出时的退出码为 143
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=65535
+SyslogIdentifier=pestai
+
+# 基本加固：/usr、/etc 只读，看不到 /home 与 /root，独立的 /tmp；/opt/pestai 与 /data/pestai 仍可写
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -59,6 +59,16 @@
                 android:background="@color/scan_on_dark"
                 android:importantForAccessibility="no" />
 
+            <!-- 点击对焦框：72dp，由 Activity 移到点击位置并播放缩放 / 淡出动画 -->
+            <View
+                android:id="@+id/scanFocusRing"
+                android:layout_width="@dimen/scan_focus_ring_size"
+                android:layout_height="@dimen/scan_focus_ring_size"
+                android:layout_gravity="top|start"
+                android:background="@drawable/scan_focus_ring"
+                android:importantForAccessibility="no"
+                android:visibility="invisible" />
+
             <!-- 取景框：280dp，四个白色角标，只用于对准参考 -->
             <FrameLayout
                 android:id="@+id/scanFrame"
@@ -100,7 +110,7 @@
                     android:src="@drawable/scan_viewfinder_corner" />
             </FrameLayout>
 
-            <!-- 提示胶囊 -->
+            <!-- 提示胶囊（位于变焦档位上方：12dp 边距 + 40dp 档位 + 12dp 间距） -->
             <LinearLayout
                 android:id="@+id/scanHintPill"
                 android:layout_width="wrap_content"
@@ -108,7 +118,7 @@
                 android:layout_gravity="bottom|center_horizontal"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="64dp"
                 android:background="@drawable/scan_bg_hint"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -133,6 +143,36 @@
                     android:textColor="@color/scan_on_dark"
                     tools:text="@string/scan_hint_pest" />
             </LinearLayout>
+
+            <!-- 变焦档位（0.5 / 1× / 2× / 5×，按设备范围增减）：相机打开、得知变焦范围后显示，档位由 Activity 生成 -->
+            <LinearLayout
+                android:id="@+id/scanZoomBar"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/scan_zoom_chip_size_active"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="12dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:visible="@{vm.zoomBarVisible}" />
+
+            <!-- 捏合缩放时的倍数胶囊（与提示胶囊同款），手势结束约 800ms 后淡出；不获取无障碍焦点 -->
+            <TextView
+                android:id="@+id/scanZoomPill"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:background="@drawable/scan_bg_hint"
+                android:focusable="false"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:minWidth="72dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="@color/scan_on_dark"
+                android:visibility="invisible"
+                tools:text="2.3×" />
 
             <!-- 权限说明层（未授权时取代取景框与提示胶囊） -->
             <LinearLayout

@@ -15,7 +15,7 @@ import com.heban.pestai.server.config.PestaiProperties;
 
 /**
  * AI 提问限流：每个用户 60 秒滑动窗口内最多 N 次（默认 10，重新生成也计数），超出返回 42901。
- * 服务单机部署，计数保存在内存中，重启后清零。
+ * 服务单机部署，计数保存在内存中，重启后清零。语音识别（AsrService）另建一个实例，每人每分钟 20 次，与提问分开计数。
  */
 @Component
 public class AiRateLimiter {

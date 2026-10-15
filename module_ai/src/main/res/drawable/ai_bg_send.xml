@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 发送 / 停止按钮：48dp 圆形，primary 底（禁用 12% onSurface），按下水波纹 -->
+<!-- 输入栏发送 / 停止按钮：36dp 圆形，primary 底（禁用 12% onSurface），按下水波纹 -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="?attr/colorControlHighlight">
     <item>

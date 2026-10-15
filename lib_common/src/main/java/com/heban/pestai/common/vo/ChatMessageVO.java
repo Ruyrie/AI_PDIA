@@ -1,6 +1,7 @@
 package com.heban.pestai.common.vo;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -13,8 +14,10 @@ public class ChatMessageVO {
     private String role;
     /** 消息文字 */
     private String content;
-    /** 带图提问时的图片地址，可空 */
+    /** 带图提问时的第一张图片地址，可空（兼容旧版本：新版本读 {@link #imageUrls}，为空时再用这个字段） */
     private String imageUrl;
+    /** 带图提问的全部图片地址（按发送顺序，完整 URL，最多 9 张）；没有图片时为空数组，旧服务器可能不返回（null） */
+    private List<String> imageUrls;
     /** 发送时间 */
     private Date createdAt;
     /** AI 回答的思考过程全文，可空 */
@@ -47,6 +50,14 @@ public class ChatMessageVO {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
 
     public Date getCreatedAt() {
@@ -85,6 +96,7 @@ public class ChatMessageVO {
         return Objects.equals(role, that.role)
                 && Objects.equals(content, that.content)
                 && Objects.equals(imageUrl, that.imageUrl)
+                && Objects.equals(imageUrls, that.imageUrls)
                 && Objects.equals(createdAt, that.createdAt)
                 && Objects.equals(reasoningContent, that.reasoningContent)
                 && Objects.equals(reasoningMs, that.reasoningMs);
@@ -92,6 +104,6 @@ public class ChatMessageVO {
 
     @Override
     public int hashCode() {
-        return Objects.hash(role, content, imageUrl, createdAt, reasoningContent, reasoningMs);
+        return Objects.hash(role, content, imageUrl, imageUrls, createdAt, reasoningContent, reasoningMs);
     }
 }

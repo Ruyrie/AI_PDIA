@@ -17,9 +17,16 @@ public class PestaiProperties {
     /** 安装包下载地址前缀；为空时为 publicBaseUrl + /download/ */
     private String downloadBaseUrl = "";
 
+    /**
+     * 后台保存的密钥类配置（t_system_config）的加密主密钥，环境变量 PESTAI_CONFIG_SECRET；
+     * 为空时由 JWT 签名密钥派生（见 ConfigCipher）
+     */
+    private String configSecret = "";
+
     private final Jwt jwt = new Jwt();
     private final Mock mock = new Mock();
     private final Ai ai = new Ai();
+    private final Admin admin = new Admin();
 
     public String getPublicBaseUrl() {
         return publicBaseUrl;
@@ -45,8 +52,20 @@ public class PestaiProperties {
         this.downloadBaseUrl = downloadBaseUrl;
     }
 
+    public String getConfigSecret() {
+        return configSecret;
+    }
+
+    public void setConfigSecret(String configSecret) {
+        this.configSecret = configSecret;
+    }
+
     public Jwt getJwt() {
         return jwt;
+    }
+
+    public Admin getAdmin() {
+        return admin;
     }
 
     public Mock getMock() {
@@ -113,11 +132,33 @@ public class PestaiProperties {
         }
     }
 
+    /** 后台管理 */
+    public static class Admin {
+        /**
+         * 初始管理员 admin 的密码（环境变量 PESTAI_ADMIN_INITIAL_PASSWORD）：只在启动时 t_admin 为空、创建 admin 时使用；
+         * 为空时随机生成并在启动日志中打印一次。首次登录后必须修改。
+         */
+        private String initialPassword = "";
+
+        public String getInitialPassword() {
+            return initialPassword;
+        }
+
+        public void setInitialPassword(String initialPassword) {
+            this.initialPassword = initialPassword;
+        }
+    }
+
     public static class Ai {
         /** 每个用户 60 秒内最多提问次数（重新生成也计数） */
         private int maxQuestionsPerMinute = 10;
         /** SseEmitter 总时长（秒） */
         private long streamTimeoutSeconds = 300;
+        /**
+         * 清理未发送的聊天图片与未保存的头像的时间（Spring cron，Asia/Shanghai），默认每天 04:30；设为「-」关闭。
+         * 由 ChatImageJanitor 的 @Scheduled 以占位符读取，这里只用于绑定与说明
+         */
+        private String orphanImageCron = "0 30 4 * * *";
 
         public int getMaxQuestionsPerMinute() {
             return maxQuestionsPerMinute;
@@ -133,6 +174,14 @@ public class PestaiProperties {
 
         public void setStreamTimeoutSeconds(long streamTimeoutSeconds) {
             this.streamTimeoutSeconds = streamTimeoutSeconds;
+        }
+
+        public String getOrphanImageCron() {
+            return orphanImageCron;
+        }
+
+        public void setOrphanImageCron(String orphanImageCron) {
+            this.orphanImageCron = orphanImageCron;
         }
     }
 }

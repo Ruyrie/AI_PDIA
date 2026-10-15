@@ -9,5 +9,7 @@ public enum AboutEvent {
     /** 打开用户协议 */
     OPEN_USER_AGREEMENT,
     /** 打开隐私政策 */
-    OPEN_PRIVACY
+    OPEN_PRIVACY,
+    /** 连续点击版本号 5 次：打开「服务器地址」对话框 */
+    SHOW_SERVER_DIALOG
 }

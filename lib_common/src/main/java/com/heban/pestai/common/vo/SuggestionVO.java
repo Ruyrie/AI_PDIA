@@ -12,6 +12,8 @@ public class SuggestionVO {
     private long id;
     /** 问题文字 */
     private String text;
+    /** 这条问题匹配到的用户作物（如「番茄」），可空：没有匹配到作物或旧版服务端不返回时为 null */
+    private String crop;
 
     public SuggestionVO() {
     }
@@ -32,6 +34,14 @@ public class SuggestionVO {
         this.text = text;
     }
 
+    public String getCrop() {
+        return crop;
+    }
+
+    public void setCrop(String crop) {
+        this.crop = crop;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -42,11 +52,12 @@ public class SuggestionVO {
         }
         SuggestionVO that = (SuggestionVO) o;
         return id == that.id
-                && Objects.equals(text, that.text);
+                && Objects.equals(text, that.text)
+                && Objects.equals(crop, that.crop);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, text);
+        return Objects.hash(id, text, crop);
     }
 }

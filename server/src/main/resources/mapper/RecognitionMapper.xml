@@ -17,10 +17,10 @@
             useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO t_recognition (user_id, `mode`, image_url, `status`, top_name, confidence, severity,
                                    category, part, spread_fast, evidence, urgency_days, others_json,
-                                   fail_reason, model_name, deleted, created_at, updated_at)
+                                   fail_reason, model_name, model, fallback, deleted, created_at, updated_at)
         VALUES (#{userId}, #{mode}, #{imageUrl}, #{status}, #{topName}, #{confidence}, #{severity},
                 #{category}, #{part}, #{spreadFast}, #{evidence}, #{urgencyDays}, #{othersJson},
-                #{failReason}, #{modelName}, 0, #{createdAt}, #{updatedAt})
+                #{failReason}, #{modelName}, #{model}, #{fallback}, 0, #{createdAt}, #{updatedAt})
     </insert>
 
     <!-- idx_user_deleted_created：前两列等值、第三列有序，倒序扫描取满 size 行即停止 -->
@@ -83,15 +83,20 @@
             urgency_days = #{urgencyDays},
             others_json = #{othersJson},
             model_name = #{modelName},
+            model = #{model},
+            fallback = #{fallback},
             fail_reason = NULL,
             updated_at = #{updatedAt}
         WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
     </update>
 
+    <!-- 照片不清晰时记录给出该结果的模型；识别失败时 model 为 NULL、fallback 为 0 -->
     <update id="updateFailure">
         UPDATE t_recognition
         SET `status` = #{status},
             fail_reason = #{failReason},
+            model = #{model},
+            fallback = #{fallback},
             updated_at = #{now}
         WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
     </update>

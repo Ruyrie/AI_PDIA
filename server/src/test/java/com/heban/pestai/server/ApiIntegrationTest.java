@@ -38,6 +38,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import com.heban.pestai.server.admin.mapper.AdminMapper;
 import com.heban.pestai.server.entity.AiMessage;
 import com.heban.pestai.server.entity.AiSession;
 import com.heban.pestai.server.entity.Recognition;
@@ -45,6 +46,7 @@ import com.heban.pestai.server.entity.User;
 import com.heban.pestai.server.mapper.AiMessageMapper;
 import com.heban.pestai.server.mapper.AiSessionMapper;
 import com.heban.pestai.server.mapper.RecognitionMapper;
+import com.heban.pestai.server.mapper.SystemConfigMapper;
 import com.heban.pestai.server.mapper.UserMapper;
 import com.heban.pestai.server.security.JwtTokenProvider;
 import com.heban.pestai.server.service.AiMessageTxService;
@@ -76,6 +78,11 @@ class ApiIntegrationTest {
 
     @MockBean
     private UserMapper userMapper;
+    /** 后台管理员表与后台配置表：启动时会读取，测试中不访问数据库 */
+    @MockBean
+    private AdminMapper adminMapper;
+    @MockBean
+    private SystemConfigMapper systemConfigMapper;
     @MockBean
     private RecognitionMapper recognitionMapper;
     @MockBean
@@ -299,13 +306,74 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void imageOnlyQuestionWithSeveralImagesStreamsAndImageRulesAreJsonErrors() throws Exception {
+        AiSession session = new AiSession();
+        session.setId(7L);
+        session.setUserId(USER_ID);
+        when(aiSessionMapper.selectById(7L)).thenReturn(session);
+        when(aiMessageTxService.saveQuestion(any(), anyString(), any(), anyBoolean())).thenReturn(78L);
+        when(aiMessageMapper.selectRecent(eq(7L), eq(78L), anyInt())).thenReturn(List.of());
+        Path dir = Path.of("target/test-files/chat/20261014");
+        Files.createDirectories(dir);
+        byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 7, 7};
+        Files.write(dir.resolve("multi-a.jpg"), jpeg);
+        Files.write(dir.resolve("multi-b.jpg"), jpeg);
+        String base = "http://10.0.2.2:8080/files/chat/20261014/";
+
+        MvcResult started = mvc.perform(post("/pestai/v1/ai/sessions/7/messages")
+                        .header("Authorization", bearer)
+                        .accept(MediaType.TEXT_EVENT_STREAM)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"\",\"image_urls\":[\"" + base + "multi-a.jpg\",\""
+                                + base + "multi-b.jpg\"]}"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        started.getAsyncResult(10_000);
+        String body = started.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(body).endsWith("data: [DONE]\n\n");
+        StringBuilder reasoning = new StringBuilder();
+        for (String event : body.split("\n\n")) {
+            if (event.startsWith("event: reasoning\ndata: ")) {
+                reasoning.append(event.substring("event: reasoning\ndata: ".length()));
+            }
+        }
+        // Mock 模型收到了两张图片和多图的默认问题
+        assertThat(reasoning.toString()).contains("用户发来 2 张照片").contains("请帮我看看这些照片里的作物");
+        verify(aiMessageTxService).saveQuestion(any(), eq(""),
+                eq(List.of("chat/20261014/multi-a.jpg", "chat/20261014/multi-b.jpg")), eq(false));
+
+        StringBuilder ten = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            ten.append(i == 0 ? "" : ",").append("\"").append(base).append("multi-").append(i).append(".jpg\"");
+        }
+        String[][] bad = {
+                {"{\"content\":\"看看\",\"image_urls\":[" + ten + "]}", "最多上传 9 张图片"},
+                {"{\"content\":\" \",\"image_urls\":[]}", "请输入问题"},
+                {"{\"image_url\":\"\"}", "请输入问题"},
+                {"{\"content\":\"看看\",\"image_urls\":[\"" + base + "missing.jpg\"]}", "图片地址无效，请重新上传图片"},
+                {"{\"content\":\"" + "长".repeat(501) + "\"}", "问题最多 500 字"}};
+        for (String[] c : bad) {
+            mvc.perform(post("/pestai/v1/ai/sessions/7/messages")
+                            .header("Authorization", bearer)
+                            .accept(MediaType.TEXT_EVENT_STREAM)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(c[0]))
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.code").value(40001))
+                    .andExpect(jsonPath("$.message").value(c[1]));
+        }
+        verify(aiMessageTxService).saveQuestion(any(), anyString(), any(), anyBoolean());
+    }
+
+    @Test
     void suggestionsComeFromSeasonPool() throws Exception {
         when(userMapper.selectCropsById(USER_ID)).thenReturn("番茄,黄瓜,小麦");
         mvc.perform(get("/pestai/v1/ai/suggestions").header("Authorization", bearer))
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.length()").value(3))
                 .andExpect(jsonPath("$.data[0].id").isNumber())
-                .andExpect(jsonPath("$.data[0].text").isString());
+                .andExpect(jsonPath("$.data[0].text").isString())
+                .andExpect(jsonPath("$.data[0].crop").isString());
     }
 
     @Test

@@ -19,6 +19,10 @@ public final class Rules {
     public static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d).{8,20}$";
     public static final String PASSWORD_MESSAGE = "密码需为 8–20 位，并同时包含字母和数字";
 
+    /** AI 问答一条消息最多带 9 张图片（与 App 端选图上限一致） */
+    public static final int CHAT_IMAGES_MAX = 9;
+    public static final String CHAT_IMAGES_MESSAGE = "最多上传 9 张图片";
+
     private static final Pattern PHONE = Pattern.compile(PHONE_REGEX);
     private static final Pattern PASSWORD = Pattern.compile(PASSWORD_REGEX);
 

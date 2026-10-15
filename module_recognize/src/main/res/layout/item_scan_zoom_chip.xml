@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 变焦档位：36dp 圆形（当前档位由 ScanActivity 放大到 40dp），文字 12sp -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/scan_zoom_chip_size"
+    android:layout_height="@dimen/scan_zoom_chip_size"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:background="@drawable/scan_zoom_bg_chip"
+    android:foreground="?attr/selectableItemBackgroundBorderless"
+    android:gravity="center"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:textColor="@color/scan_zoom_chip_text"
+    android:textSize="12sp"
+    android:textStyle="bold"
+    tools:text="1×" />

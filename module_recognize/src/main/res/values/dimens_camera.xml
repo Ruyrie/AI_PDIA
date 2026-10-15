@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 相机变焦与对焦尺寸 -->
+<resources>
+    <!-- 变焦档位：普通 36dp，当前档位 40dp -->
+    <dimen name="scan_zoom_chip_size">36dp</dimen>
+    <dimen name="scan_zoom_chip_size_active">40dp</dimen>
+    <!-- 点击对焦框边长 -->
+    <dimen name="scan_focus_ring_size">72dp</dimen>
+</resources>

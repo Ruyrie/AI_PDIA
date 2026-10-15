@@ -159,7 +159,7 @@ class OpenAiCompatibleTest {
         DashScopeVisionClient client = new DashScopeVisionClient(props, http);
 
         String raw = client.recognize(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1}, "image/jpeg", Mode.PEST,
-                Duration.ofSeconds(5));
+                List.of("番茄", "黄瓜"), Duration.ofSeconds(5));
         assertThat(raw).isEqualTo("{\"status\":\"IMAGE_BAD\"}");
 
         JsonNode sent = new ObjectMapper().readTree(server.takeRequest().getBody().readUtf8());
@@ -171,6 +171,11 @@ class OpenAiCompatibleTest {
         assertThat(user.path("content").path(0).path("type").asText()).isEqualTo("image_url");
         assertThat(user.path("content").path(0).path("image_url").path("url").asText())
                 .startsWith("data:image/jpeg;base64,/9j/");
+        // 文字在图片之后：识图指令 + 一行作物参考信息
+        assertThat(user.path("content").path(1).path("type").asText()).isEqualTo("text");
+        assertThat(user.path("content").path(1).path("text").asText())
+                .isEqualTo(VisionPrompts.userInstruction(List.of("番茄", "黄瓜")))
+                .startsWith(VisionPrompts.USER_INSTRUCTION + "\n参考信息：该用户主要种植番茄、黄瓜。");
         assertThat(sent.path("messages").path(0).path("content").asText()).contains("top_name");
     }
 
@@ -182,16 +187,51 @@ class OpenAiCompatibleTest {
         DashScopeVisionClient client = new DashScopeVisionClient(props, http);
 
         server.enqueue(new MockResponse().setResponseCode(429).setBody("{\"error\":\"rate limited\"}"));
-        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, Duration.ofSeconds(5)))
+        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, List.of(), Duration.ofSeconds(5)))
                 .isInstanceOf(VisionException.class)
                 .extracting(e -> ((VisionException) e).getReason())
                 .isEqualTo(VisionException.Reason.UNAVAILABLE);
 
         server.enqueue(new MockResponse().setBody("{}").setHeadersDelay(2, java.util.concurrent.TimeUnit.SECONDS));
-        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, Duration.ofMillis(300)))
+        assertThatThrownBy(() -> client.recognize(new byte[]{1}, "image/jpeg", Mode.PEST, List.of(), Duration.ofMillis(300)))
                 .isInstanceOf(VisionException.class)
                 .extracting(e -> ((VisionException) e).getReason())
                 .isEqualTo(VisionException.Reason.TIMEOUT);
+    }
+
+    @Test
+    void multiImageMessageHasOneImagePartPerImageThenText() throws Exception {
+        List<ChatMessage> messages = List.of(
+                ChatMessage.system("sys"),
+                ChatMessage.user("上一轮问题（用户附带了 2 张图片）"),
+                ChatMessage.assistant("上一轮回答"),
+                ChatMessage.user("这三张哪张更严重").withImages(List.of(
+                        "data:image/jpeg;base64,AAAA", "data:image/png;base64,BBBB", "data:image/jpeg;base64,CCCC")));
+        JsonNode sent = new ObjectMapper().readTree(
+                OpenAiCompatible.buildRequest("deepseek-flash", messages, true, 0.7, null));
+
+        JsonNode array = sent.path("messages");
+        assertThat(array).hasSize(4);
+        // 没有图片的消息仍为纯文本
+        assertThat(array.path(1).path("content").isTextual()).isTrue();
+        assertThat(array.path(2).path("content").asText()).isEqualTo("上一轮回答");
+        JsonNode parts = array.path(3).path("content");
+        assertThat(parts.isArray()).isTrue();
+        assertThat(parts).hasSize(4);
+        List<String> types = new ArrayList<>();
+        parts.forEach(part -> types.add(part.path("type").asText()));
+        assertThat(types).containsExactly("image_url", "image_url", "image_url", "text");
+        assertThat(parts.path(0).path("image_url").path("url").asText()).isEqualTo("data:image/jpeg;base64,AAAA");
+        assertThat(parts.path(1).path("image_url").path("url").asText()).isEqualTo("data:image/png;base64,BBBB");
+        assertThat(parts.path(2).path("image_url").path("url").asText()).isEqualTo("data:image/jpeg;base64,CCCC");
+        assertThat(parts.path(3).path("text").asText()).isEqualTo("这三张哪张更严重");
+
+        // 单张图片（拍照识别、旧版单图提问）：[图片, 文字]
+        JsonNode single = new ObjectMapper().readTree(OpenAiCompatible.buildRequest("m",
+                List.of(ChatMessage.user("q").withImage("data:image/jpeg;base64,AA")), false, null, null));
+        assertThat(single.path("messages").path(0).path("content")).hasSize(2);
+        assertThat(ChatMessage.user("q").withImages(null).imageDataUrls()).isEmpty();
+        assertThat(ChatMessage.user("q").hasImage()).isFalse();
     }
 
     @Test

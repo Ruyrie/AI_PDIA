@@ -14,6 +14,7 @@ import com.heban.pestai.mine.data.CacheRepository;
 import com.heban.pestai.mine.data.MineRepository;
 import com.heban.pestai.mine.data.RecoveryReminderStore;
 import com.heban.pestai.mine.data.SettingsRepository;
+import com.heban.pestai.network.ServerAddress;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -178,6 +179,27 @@ public final class Fakes {
         vo.setGenerated(generated);
         vo.setVerifyRequired(true);
         return vo;
+    }
+
+    /** 假服务器地址：保存的地址放在内存里（测试在创建 ViewModel 前设置 saved 即为已保存的自定义地址） */
+    public static class FakeServerAddress extends ServerAddress {
+        @Nullable
+        public String saved;
+
+        public FakeServerAddress(@NonNull String defaultServer) {
+            super(null, defaultServer);
+        }
+
+        @Nullable
+        @Override
+        protected String readSaved() {
+            return saved;
+        }
+
+        @Override
+        protected void writeSaved(@Nullable String value) {
+            saved = value;
+        }
     }
 
     public static class FakeSettingsRepository extends SettingsRepository {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S01 相机变焦与对焦配色（深色相机页专用，scan_zoom_ 前缀） -->
+<resources>
+    <!-- 变焦档位圆底：黑色 40% 不透明，浮在预览画面上 -->
+    <color name="scan_zoom_chip_bg">#66000000</color>
+</resources>
